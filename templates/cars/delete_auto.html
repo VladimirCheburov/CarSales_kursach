@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}Удалить автомобиль{% endblock %}
+
+{% block content %}
+    <h1>Удалить автомобиль</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Удалить</button>
+    </form>
+    <a href="{% url 'auto_list' %}" class="btn btn-secondary">Отменить</a>
+{% endblock %}

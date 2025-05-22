@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Результаты поиска{% endblock %}
+
+{% block content %}
+<h1>Результаты поиска</h1>
+
+<form method="get" action="{% url 'search_autos' %}">
+    <input type="text" name="q" value="{{ query }}" placeholder="Введите запрос">
+    <button type="submit">Найти</button>
+</form>
+
+{% if query %}
+    <p>Поиск по запросу: "{{ query }}"</p>
+    {% if results %}
+        <ul>
+            {% for auto in results %}
+                <li>
+                    <a href="{{ auto.get_absolute_url }}">{{ auto.brand.name }} {{ auto.model }}</a>
+                        <p>Год выпуска: {{ auto.year }}</p>
+                        <p>Цена: {{ auto.price|floatformat:0 }} ₽</p>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Нет результатов по вашему запросу.</p>
+    {% endif %}
+{% else %}
+    <p>Введите запрос для поиска автомобилей.</p>
+{% endif %}
+{% endblock %}

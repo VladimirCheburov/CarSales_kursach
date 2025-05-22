@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Новости{% endblock %}
+
+{% block content %}
+<h1>Новости</h1>
+
+<div class="news-list">
+    {% if news %}
+        {% for new in news %}
+        <div class="news-item">
+            {% if new.main_photo %}
+                <img src="{{ new.main_photo.url }}" alt="Фото новости">
+            {% endif %}
+            <h2>{{ new.title }}</h2>
+            <p>{{ new.content|truncatewords:30 }}</p>
+            <p><small>Опубликовано: {{ new.created_at|date:"d.m.Y H:i" }}</small></p>
+            {% if new.new_photos.all %}
+                <div>
+                    {% for photo in new.new_photos.all %}
+                        <img src="{{ photo.image.url }}" alt="{{ photo.description }}">
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>Новостей пока нет.</p>
+    {% endif %}
+</div>
+{% endblock %}

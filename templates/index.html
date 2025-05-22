@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load custom_tags static %}
+
+{% block title %}Главная страница{% endblock %}
+
+{% block content %}
+<div class="search-form">
+    <form method="get" action="{% url 'search_autos' %}">
+        <input type="text" name="q" placeholder="Поиск автомобилей..." class="search-input">
+        <button type="submit" class="search-btn">Найти</button>
+    </form>
+</div>
+
+<div>
+    <h2 class="section-title">Последние новости</h2>
+    <ul class="news-list">
+        {% for news in latest_news %}
+            <li class="news-item">
+                <h3 class="news-title">{{ news.title }}</h3>
+                <p class="news-content">{{ news.content|truncatewords:20 }}</p>
+            </li>
+        {% empty %}
+            <li class="news-item">Нет новостей для отображения.</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'news_list' %}" class="view-all">Перейти ко всем новостям →</a>
+</div>
+
+<div>
+    <!-- шаблонные теги -->
+    <div style="display: flex; gap: 1rem; margin: 1rem 0;">
+        <span>Всего автомобилей: {% count_total_autos %}</span>
+        <span>Автомобилей на странице: {% count_filtered_autos autos_page %}</span>
+    </div>
+
+    <h2 class="section-title">Новые авто 🔥</h2>
+    <div class="horizontal-scroll">
+        {% get_recent_autos as recent_autos %}
+        {% for auto in recent_autos %}
+        <div class="card" style="min-width: 250px;">
+            <a href="{{ auto.get_absolute_url }}">
+                {% if auto.auto_photos.first %}
+                    <img src="{{ auto.auto_photos.first.photo.url }}" alt="Фото {{ auto.brand.name }}" class="card-img">
+                {% else %}
+                    <img src="{% static 'images/no_image_available.png' %}" alt="Нет изображения" class="card-img">
+                {% endif %}
+                <div class="card-body">
+                    <h4 class="card-title">{{ auto.brand.name }} {{ auto.model }}</h4>
+                    <p class="card-text">Год выпуска: {{ auto.year }}</p>
+                    <p class="card-price">{{ auto.price|floatformat:0 }} ₽</p>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <p>Нет недавно добавленных автомобилей.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<div>
+    <h2 class="section-title">Подобрали специально для вас</h2>
+    <div class="grid">
+        {% for auto_data in autos_with_photos %}
+        <div class="card">
+            <a href="{{ auto_data.auto.get_absolute_url }}">
+                {% for photo in auto_data.photos %}
+                    <img src="{{ photo.photo.url }}" alt="Фото {{ auto_data.auto.brand.name }}" class="card-img">
+                    {% if forloop.first %}{% endif %}
+                {% endfor %}
+                <div class="card-body">
+                    <h3 class="card-title">{{ auto_data.auto.brand.name }} {{ auto_data.auto.model }}</h3>
+                    <p class="card-text">Год выпуска: {{ auto_data.auto.year }}</p>
+                    <p class="card-price">{{ auto_data.auto.price|floatformat:0 }} ₽</p>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="pagination">
+    {% if autos_page.has_previous %}
+        <a href="?page=1" class="page-link">Первая</a>
+        <a href="?page={{ autos_page.previous_page_number }}" class="page-link">Предыдущая</a>
+    {% endif %}
+
+    <span class="current-page">Страница {{ autos_page.number }} из {{ autos_page.paginator.num_pages }}</span>
+
+    {% if autos_page.has_next %}
+        <a href="?page={{ autos_page.next_page_number }}" class="page-link">Следующая</a>
+        <a href="?page={{ autos_page.paginator.num_pages }}" class="page-link">Последняя</a>
+    {% endif %}
+</div>
+
+<div>
+    <h2 class="section-title">Купили только что 🔥</h2>
+    <div class="grid">
+        {% not_available_autos as autos %}
+        {% for auto in autos %}
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">{{ auto.brand.name }} {{ auto.model }}</h3>
+                <p class="card-text">Год выпуска: {{ auto.year }}</p>
+                <p class="card-text" style="color: var(--secondary);">Продано</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

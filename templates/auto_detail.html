@@ -1,0 +1,182 @@
+\\{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ auto.brand.name }} {{ auto.model }}{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --image-height: 60vh;
+        --primary-color: #2563eb;
+        --secondary-color: #3b82f6;
+    }
+
+    .adaptive-image {
+        height: var(--image-height);
+        min-height: 300px;
+        max-height: 700px;
+        object-fit: cover;
+        border-radius: 15px;
+    }
+
+    .detail-card {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .spec-card {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: transform 0.2s ease;
+    }
+
+    .spec-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .icon-wrapper {
+        width: 40px;
+        height: 40px;
+        background: rgba(37, 99, 235, 0.1);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .info-label {
+        color: #000;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .info-value {
+        color: #64748b;
+        font-size: 1rem;
+    }
+
+    .price-badge {
+        background: #2563eb;
+        color: white;
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
+        font-size: 1.5rem;
+    }
+</style>
+
+<main class="container-fluid px-lg-5 mt-4">
+    <div class="row g-4">
+        <!-- Image Section -->
+        <div class="col-lg-8">
+            <div class="card border-0 bg-transparent">
+                {% if photos %}
+                <div id="mainCarousel" class="carousel slide">
+                    <div class="carousel-inner">
+                        {% for photo in photos %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <img src="{{ photo.photo.url }}"
+                                 class="d-block w-100 adaptive-image"
+                                 alt="{{ auto.brand.name }} {{ auto.model }}">
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="adaptive-image bg-light d-flex align-items-center justify-content-center">
+                    <i class="bi bi-image text-muted" style="font-size: 3rem"></i>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Details Section -->
+        <div class="col-lg-4">
+            <div class="detail-card">
+                <!-- Price -->
+                <div class="d-flex justify-content-end mb-4">
+                    <div class="price-badge">
+                        {{ auto.price|floatformat:0 }} ₽
+                    </div>
+                </div>
+
+                <!-- Specifications -->
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <div class="spec-card">
+                            <div class="icon-wrapper">
+                                <i class="bi bi-speedometer2 text-primary"></i>
+                            </div>
+                            <div class="info-label">Пробег</div>
+                            <div class="info-value">{{ auto.mileage }} км</div>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="spec-card">
+                            <div class="icon-wrapper">
+                                <i class="bi bi-car-front text-primary"></i>
+                            </div>
+                            <div class="info-label">Кузов</div>
+                            <div class="info-value">{{ auto.body_type.name }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Info -->
+                <div class="mb-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <i class="bi bi-geo-alt fs-5 text-primary"></i>
+                        <div>
+                            <div class="info-label">Локация</div>
+                            <div class="info-value">{{ auto.region.name }}</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <i class="bi bi-calendar3 fs-5 text-primary"></i>
+                        <div>
+                            <div class="info-label">Год выпуска</div>
+                            <div class="info-value">{{ auto.year }}</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="bi bi-clipboard-check fs-5 text-primary"></i>
+                        <div>
+                            <div class="info-label">Статус</div>
+                            <div class="info-value">{{ auto.sell_status.name }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="border-top pt-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="bi bi-file-text fs-5 text-primary"></i>
+                        <div class="info-label">Описание</div>
+                    </div>
+                    <div class="text-secondary lh-lg">
+                        {{ auto.description|default:"Описание отсутствует"|linebreaks }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Image Height Adjustment
+    function adjustImageHeight() {
+        const viewportWidth = window.innerWidth;
+        const baseHeight = Math.min(viewportWidth * 0.6, 700);
+        document.documentElement.style.setProperty('--image-height', `${baseHeight}px`);
+    }
+
+    window.addEventListener('resize', adjustImageHeight);
+    adjustImageHeight();
+</script>
+{% endblock %}

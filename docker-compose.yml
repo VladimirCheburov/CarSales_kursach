@@ -1,0 +1,46 @@
+version: "3.10"
+
+services:
+  web:
+    build: . 
+    command: python manage.py runserver 0.0.0.0:8000 
+    ports:
+      - "8000:8000" 
+    volumes:
+      - .:/app 
+    depends_on:
+      - redis 
+      - celery
+    environment:
+      - DJANGO_SETTINGS_MODULE=carsales.settings
+
+  redis:
+    image: redis:alpine # используем образ Redis (брокер сообщений)
+    ports:
+      - "6379:6379" # связываем порт Redis
+
+  celery:
+    build: .
+    command: celery -A carsales worker -l info
+    depends_on:
+      - redis 
+    environment:
+      - DJANGO_SETTINGS_MODULE=carsales.settings
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+
+  celerybeat:
+    build: .
+    command: celery -A carsales beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      - redis
+    environment:
+      - DJANGO_SETTINGS_MODULE=carsales.settings
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+  
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "2525:1025" # SMTP порт
+      - "8026:8025" # веб-интерфейс Mailhog (переносим на порт 8026, чтобы избежать конфликта)

@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Статистика по категориям</title>
+    <link rel="stylesheet" href="{% static 'css/contact_form.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>Количество новостей в каждой категории</h1>
+        <ul>
+            {% for category in categories %}
+                <li>
+                    <strong>{{ category.name }}:</strong> {{ category.news_count }} новостей
+                </li>
+            {% endfor %}
+        </ul>
+        <a href="{% url 'index' %}">Вернуться на главную</a>
+    </div>
+</body>
+</html>

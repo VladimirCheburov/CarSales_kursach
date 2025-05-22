@@ -1,0 +1,46 @@
+body {
+    background-color: lightblue;
+}
+.recent-autos-list {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto; /* Добавляем горизонтальную прокрутку */
+    padding: 10px 0;
+    white-space: nowrap; /* Запрещаем перенос элементов на новую строку */
+}
+
+.recent-auto-item {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    width: 200px;
+    text-align: center;
+    background-color: #f9f9f9;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    flex: 0 0 auto; /* Фиксируем ширину карточек, чтобы они не сжимались */
+}
+
+.recent-auto-item h4 {
+    margin: 10px 0;
+    font-size: 16px;
+}
+
+.recent-auto-item p {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.recent-auto-image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.link {
+    display: flex;
+    justify-content: center; /* Центрируем по горизонтали */
+    align-items: center;     /* Центрируем по вертикали */
+    height: 100px;           /* Высота контейнера */
+}

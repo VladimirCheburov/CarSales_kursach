@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавить автомобиль</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --accent-color: #60a5fa;
+            --text-color: #1f2937;
+            --background-color: #f8fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                        0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            padding: 2.5rem;
+            color: white;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-section {
+            padding: 2.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group h2 {
+            font-size: 1.5rem;
+            color: var(--text-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group h2::before {
+            content: '🚗';
+            font-size: 1.2em;
+        }
+
+        .form-group:nth-child(2) h2::before {
+            content: '📸';
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        input,
+        select,
+        textarea,
+        .file-input {
+            width: 100%;
+            padding: 0.875rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .file-input {
+            padding: 1.5rem;
+            border: 2px dashed #cbd5e1;
+            text-align: center;
+            color: #64748b;
+            cursor: pointer;
+        }
+
+        .file-input:hover {
+            border-color: var(--accent-color);
+            background: #f8fafc;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 1rem;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 1rem;
+            }
+
+            .container {
+                margin: 1rem auto;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .form-section {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Подать объявление</h1>
+            <p>Добавьте свой автомобиль всего за несколько шагов</p>
+        </div>
+
+        <div class="form-section">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <h2>Информация об автомобиле</h2>
+                    {{ auto_form.as_p }}
+                </div>
+
+                <div class="form-group">
+                    <h2>Фотографии автомобиля</h2>
+                    {{ photo_form.as_p }}
+                </div>
+
+                <button type="submit">Опубликовать объявление</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
