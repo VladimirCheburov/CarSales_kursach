@@ -80,16 +80,36 @@ def index(request):
     ]
     latest_news = New.objects.all().order_by('-created_at')[:2]  
     # получаем новости, отсортированные по дате создания, ограничиваем 2 новостями
+
+    # Популярные авто (по просмотрам)
+    popular_autos = Auto.objects.available().order_by('-views')[:5]
+
+    # Советы (категория 'Советы')
+    advice_category = None
+    advice_news = []
+    from news.models import NewCategory
+    try:
+        advice_category = NewCategory.objects.get(name__iexact='Советы')
+        advice_news = New.objects.filter(categories=advice_category, status='published').order_by('-created_at')[:3]
+    except NewCategory.DoesNotExist:
+        advice_news = []
+
     return render(request, 'index.html', {
         'autos_with_photos': autos_with_photos,
         'autos_page': autos_page,
         'autos': autos, 
         'latest_news': latest_news,
+        'popular_autos': popular_autos,
+        'advice_news': advice_news,
     })
 
 def auto_detail(request, pk):
 
     auto = get_object_or_404(Auto, pk=pk)
+
+    # Увеличиваем счетчик просмотров
+    auto.views = auto.views + 1
+    auto.save(update_fields=['views'])
 
     photos = auto.auto_photos.all()
 

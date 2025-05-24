@@ -143,6 +143,7 @@ class Auto(TimeStamped):
     region = models.ForeignKey(Region, on_delete=models.CASCADE)
     sell_status = models.ForeignKey(SellStatus, on_delete=models.PROTECT, null=True, blank=True)
     # on_delete=models.CASCADE удаляет автомобиль, если связанный пользователь удалён
+    views = models.PositiveIntegerField(default=0)  # Новое поле для подсчёта просмотров
     objects = AutoManager()
     history = HistoricalRecords()
 

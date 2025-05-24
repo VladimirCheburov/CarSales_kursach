@@ -11,6 +11,7 @@
     </form>
 </div>
 
+<!-- Виджет 1: Последние новости (ограничение: 2, сортировка: по дате публикации) -->
 <div>
     <h2 class="section-title">Последние новости</h2>
     <ul class="news-list">
@@ -24,6 +25,47 @@
         {% endfor %}
     </ul>
     <a href="{% url 'news_list' %}" class="view-all">Перейти ко всем новостям →</a>
+</div>
+
+<!-- Виджет 2: Популярные автомобили (ограничение: 5, сортировка: по просмотрам) -->
+<div>
+    <h2 class="section-title">Популярные автомобили</h2>
+    <div class="horizontal-scroll">
+        {% for auto in popular_autos %}
+        <div class="card" style="min-width: 250px;">
+            <a href="{{ auto.get_absolute_url }}">
+                {% if auto.auto_photos.first %}
+                    <img src="{{ auto.auto_photos.first.photo.url }}" alt="Фото {{ auto.brand.name }}" class="card-img">
+                {% else %}
+                    <img src="{% static 'images/no_image_available.png' %}" alt="Нет изображения" class="card-img">
+                {% endif %}
+                <div class="card-body">
+                    <h4 class="card-title">{{ auto.brand.name }} {{ auto.model }}</h4>
+                    <p class="card-text">Год выпуска: {{ auto.year }}</p>
+                    <p class="card-price">{{ auto.price|floatformat:0 }} ₽</p>
+                    <p class="card-views">Просмотров: {{ auto.views }}</p>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <p>Нет популярных автомобилей.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Виджет 3: Советы (ограничение: 3, сортировка: по дате публикации) -->
+<div>
+    <h2 class="section-title">Советы по выбору авто</h2>
+    <ul class="news-list">
+        {% for news in advice_news %}
+            <li class="news-item">
+                <h3 class="news-title">{{ news.title }}</h3>
+                <p class="news-content">{{ news.content|truncatewords:20 }}</p>
+            </li>
+        {% empty %}
+            <li class="news-item">Нет советов для отображения.</li>
+        {% endfor %}
+    </ul>
 </div>
 
 <div>
