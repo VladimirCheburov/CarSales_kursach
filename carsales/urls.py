@@ -15,6 +15,8 @@ from cars.views import manage_autos
 from cars.views import contact_view
 from news.views import category_summary
 from cars.views import test_view
+from cars.views import favorite_autos
+from cars.views import autos_by_region, toggle_favorite
 router = DefaultRouter()
 router.register(r'autos', AutoViewSet, basename='autos')
 router.register(r'brands', BrandViewSet, basename='brands')
@@ -65,6 +67,10 @@ urlpatterns = [
     path('api/autos/search/', AutoSearchAPIView.as_view(), name='auto-search'),
     path('api/', include(router.urls)),
     path('news/category-summary/', category_summary, name='category_summary'),
+    path('news/', include('news.urls')),
+    path('favorite-autos/', favorite_autos, name='favorite_autos'),
+    path('autos/region/<int:region_id>/', autos_by_region, name='autos_by_region'),
+    path('autos/<int:pk>/toggle_favorite/', toggle_favorite, name='toggle_favorite'),
     ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if settings.DEBUG:

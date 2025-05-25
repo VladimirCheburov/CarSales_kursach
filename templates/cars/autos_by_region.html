@@ -1,0 +1,39 @@
+{% load static %}
+{% extends 'base.html' %}
+
+{% block title %}Автомобили в регионе {{ region.name }}{% endblock %}
+
+{% block content %}
+<h1>Автомобили в регионе {{ region.name }}</h1>
+<div class="horizontal-scroll">
+    {% for auto in autos %}
+    <div class="card" style="min-width: 250px;">
+        <a href="{{ auto.get_absolute_url }}">
+            {% if auto.auto_photos.first %}
+                <img src="{{ auto.auto_photos.first.photo.url }}" alt="Фото {{ auto.brand.name }}" class="card-img">
+            {% else %}
+                <img src="{% static 'images/no_image_available.png' %}" alt="Нет изображения" class="card-img">
+            {% endif %}
+            <div class="card-body">
+                <h4 class="card-title">{{ auto.brand.name }} {{ auto.model }}</h4>
+                <p class="card-text">Год выпуска: {{ auto.year }}</p>
+                <p class="card-price">{{ auto.price|floatformat:0 }} ₽</p>
+                <span class="widget-region">{{ auto.region.name }}</span>
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'toggle_favorite' auto.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        {% if auto.id in favorite_ids %}
+                            <button class="fav-btn" type="submit">Удалить из избранного</button>
+                        {% else %}
+                            <button class="fav-btn" type="submit">★ В избранное</button>
+                        {% endif %}
+                    </form>
+                {% endif %}
+            </div>
+        </a>
+    </div>
+    {% empty %}
+    <p>В этом регионе нет автомобилей.</p>
+    {% endfor %}
+</div>
+{% endblock %} 

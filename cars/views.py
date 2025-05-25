@@ -21,6 +21,9 @@ from django.http import HttpResponseRedirect
 from .forms import ContactForm
 from .forms import AutoForm, AutoPhotoForm
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from cars.models import Favorite
+from django.views.decorators.http import require_POST
 
 class AutoFilterAPIView(generics.ListAPIView):
     """
@@ -94,6 +97,10 @@ def index(request):
     except NewCategory.DoesNotExist:
         advice_news = []
 
+    favorite_ids = []
+    if request.user.is_authenticated:
+        favorite_ids = list(Auto.objects.filter(favorite__user=request.user).values_list('id', flat=True))
+
     return render(request, 'index.html', {
         'autos_with_photos': autos_with_photos,
         'autos_page': autos_page,
@@ -101,6 +108,7 @@ def index(request):
         'latest_news': latest_news,
         'popular_autos': popular_autos,
         'advice_news': advice_news,
+        'favorite_ids': favorite_ids,
     })
 
 def auto_detail(request, pk):
@@ -431,9 +439,30 @@ def auto_list(request):
     autos = Auto.objects.all() 
     return render(request, 'cars/autos_list.html', {'autos': autos})
 
+@login_required
+def favorite_autos(request):
+    user = request.user
+    favorites = Auto.objects.filter(favorite__user=user)
+    favorite_ids = list(favorites.values_list('id', flat=True))
+    return render(request, 'cars/favorite_autos.html', {'favorites': favorites, 'favorite_ids': favorite_ids})
+
+# Фильтрация по региону
+
+def autos_by_region(request, region_id):
+    autos = Auto.objects.available().filter(region_id=region_id)
+    region = Region.objects.get(id=region_id)
+    favorite_ids = []
+    if request.user.is_authenticated:
+        favorite_ids = list(Auto.objects.filter(favorite__user=request.user).values_list('id', flat=True))
+    return render(request, 'cars/autos_by_region.html', {'autos': autos, 'region': region, 'favorite_ids': favorite_ids})
+
+# Ограничение редактирования объявлений только владельцем
+@login_required
 def edit_auto(request, pk):
     auto = get_object_or_404(Auto, pk=pk)
-
+    if auto.profile.user != request.user:
+        messages.error(request, 'Вы не можете редактировать это объявление.')
+        return redirect('auto_detail', pk=pk)
     if request.method == 'POST':
         form = AutoForm(request.POST, instance=auto)
         if form.is_valid():
@@ -441,7 +470,6 @@ def edit_auto(request, pk):
             return redirect('auto_list')
     else:
         form = AutoForm(instance=auto)
-
     return render(request, 'cars/edit_auto.html', {'form': form, 'auto': auto})
 
 def delete_auto(request, pk):
@@ -475,3 +503,15 @@ def add_auto(request):
         'auto_form': auto_form,
         'photo_form': photo_form
     })
+
+@require_POST
+@login_required
+def toggle_favorite(request, pk):
+    auto = get_object_or_404(Auto, pk=pk)
+    favorite, created = Favorite.objects.get_or_create(user=request.user, auto=auto)
+    if not created:
+        favorite.delete()
+        messages.info(request, 'Автомобиль удалён из избранного.')
+    else:
+        messages.success(request, 'Автомобиль добавлен в избранное!')
+    return redirect(request.META.get('HTTP_REFERER', 'index'))
