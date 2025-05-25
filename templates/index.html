@@ -11,25 +11,32 @@
     </form>
 </div>
 
-<!-- Виджет 1: Последние новости (ограничение: 2, сортировка: по дате публикации) -->
-<div>
-    <h2 class="section-title">Последние новости</h2>
-    <ul class="news-list">
+<!-- Виджет 1: Последние новости -->
+<div class="widget">
+    <div class="widget-header">
+        <h2><a href="{% url 'news_list' %}">Последние новости</a></h2>
+        <a href="{% url 'news_list' %}" class="view-all-link">Смотреть все</a>
+    </div>
+    <ol class="widget-list">
         {% for news in latest_news %}
-            <li class="news-item">
-                <h3 class="news-title">{{ news.title }}</h3>
-                <p class="news-content">{{ news.content|truncatewords:20 }}</p>
-            </li>
-        {% empty %}
-            <li class="news-item">Нет новостей для отображения.</li>
+        <li class="widget-item">
+            <div class="widget-card">
+                <a href="{% url 'news_detail' news.id %}" class="widget-title">{{ news.title }}</a>
+                <div class="widget-info">
+                    <span class="widget-date">{{ news.created_at|date:"d.m.Y" }}</span>
+                </div>
+            </div>
+        </li>
         {% endfor %}
-    </ul>
-    <a href="{% url 'news_list' %}" class="view-all">Перейти ко всем новостям →</a>
+    </ol>
 </div>
 
-<!-- Виджет 2: Популярные автомобили (ограничение: 5, сортировка: по просмотрам) -->
-<div>
-    <h2 class="section-title">Популярные автомобили</h2>
+<!-- Виджет 2: Популярные автомобили -->
+<div class="widget">
+    <div class="widget-header">
+        <h2><a href="{% url 'auto_list' %}">Популярные автомобили</a></h2>
+        <a href="{% url 'auto_list' %}" class="view-all-link">Смотреть все</a>
+    </div>
     <div class="horizontal-scroll">
         {% for auto in popular_autos %}
         <div class="card" style="min-width: 250px;">
@@ -44,29 +51,59 @@
                     <p class="card-text">Год выпуска: {{ auto.year }}</p>
                     <p class="card-price">{{ auto.price|floatformat:0 }} ₽</p>
                     <p class="card-views">Просмотров: {{ auto.views }}</p>
+                    <span class="widget-region">
+                        <a href="{% url 'autos_by_region' auto.region.id %}">{{ auto.region.name }}</a>
+                    </span>
+                    {% if user.is_authenticated %}
+                        <form method="post" action="{% url 'toggle_favorite' auto.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            {% if auto.id in favorite_ids %}
+                                <button class="fav-btn" type="submit">Удалить из избранного</button>
+                            {% else %}
+                                <button class="fav-btn" type="submit">★ В избранное</button>
+                            {% endif %}
+                        </form>
+                    {% endif %}
                 </div>
             </a>
         </div>
-        {% empty %}
-        <p>Нет популярных автомобилей.</p>
         {% endfor %}
     </div>
 </div>
 
-<!-- Виджет 3: Советы (ограничение: 3, сортировка: по дате публикации) -->
-<div>
-    <h2 class="section-title">Советы по выбору авто</h2>
-    <ul class="news-list">
+<!-- Виджет 3: Советы -->
+<div class="widget">
+    <div class="widget-header">
+        <h2><a href="{% url 'news_list' %}?category=Советы">Советы по выбору авто</a></h2>
+        <a href="{% url 'news_list' %}?category=Советы" class="view-all-link">Смотреть все советы</a>
+    </div>
+    <ol class="widget-list">
         {% for news in advice_news %}
-            <li class="news-item">
-                <h3 class="news-title">{{ news.title }}</h3>
-                <p class="news-content">{{ news.content|truncatewords:20 }}</p>
-            </li>
-        {% empty %}
-            <li class="news-item">Нет советов для отображения.</li>
+        <li class="widget-item">
+            <div class="widget-card">
+                <a href="{% url 'news_detail' news.id %}" class="widget-title">{{ news.title }}</a>
+                <div class="widget-info">
+                    <span class="widget-date">{{ news.created_at|date:"d.m.Y" }}</span>
+                </div>
+            </div>
+        </li>
         {% endfor %}
-    </ul>
+    </ol>
 </div>
+
+<style>
+.widget { border: 1px solid #eee; border-radius: 8px; margin-bottom: 2rem; background: #fff; }
+.widget-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid #eee; }
+.widget-header h2 { margin: 0; font-size: 1.3rem; }
+.widget-list { list-style: decimal inside; margin: 0; padding: 0 1rem 1rem 2rem; }
+.widget-item { margin-bottom: 1rem; }
+.widget-card { display: flex; align-items: center; gap: 1rem; }
+.widget-title { font-weight: bold; color: #2563eb; text-decoration: none; }
+.widget-img { width: 60px; height: 40px; object-fit: cover; border-radius: 4px; }
+.widget-info { display: flex; align-items: center; gap: 0.5rem; }
+.fav-btn { background: #eee; border: none; border-radius: 4px; padding: 0.3rem 0.7rem; cursor: not-allowed; }
+.view-all-link { font-size: 0.95rem; color: #10b981; text-decoration: none; }
+</style>
 
 <div>
     <!-- шаблонные теги -->

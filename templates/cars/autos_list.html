@@ -9,13 +9,12 @@
 
     <div class="autos-grid">
         {% for auto in autos %}
+        <a href="{{ auto.get_absolute_url }}" style="text-decoration: none; color: inherit;">
         <div class="auto-card">
-
             <div class="auto-header">
                 <h3 class="auto-title">{{ auto.brand.name }} {{ auto.model }}</h3>
                 <span class="auto-year">{{ auto.year }}</span>
             </div>
-
             <div class="auto-body">
                 <div class="price-block">
                     <span class="price">{{ auto.price|floatformat:0 }} ₽</span>
@@ -25,20 +24,8 @@
                     {{ auto.region.name }}
                 </div>
             </div>
-
-            <div class="auto-actions">
-                <a href="{% url 'edit_auto' auto.id %}" class="btn edit-btn">
-                    <i class="fas fa-edit"></i> Изменить
-                </a>
-                <form method="POST" action="{% url 'delete_auto' auto.id %}" class="delete-form">
-                    {% csrf_token %}
-                    <button type="submit" class="btn delete-btn"
-                            onclick="return confirm('Удалить автомобиль?')">
-                        <i class="fas fa-trash"></i> Удалить
-                    </button>
-                </form>
-            </div>
         </div>
+        </a>
         {% empty %}
         <div class="empty-list">
             <i class="fas fa-car fa-3x"></i>
