@@ -121,9 +121,14 @@ def auto_detail(request, pk):
 
     photos = auto.auto_photos.all()
 
+    favorite_ids = []
+    if request.user.is_authenticated:
+        favorite_ids = list(Auto.objects.filter(favorite__user=request.user).values_list('id', flat=True))
+
     return render(request, 'auto_detail.html', {
         'auto': auto,
-        'photos': photos
+        'photos': photos,
+        'favorite_ids': favorite_ids
     })
 
 def auto_create(request):

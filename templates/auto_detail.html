@@ -1,4 +1,4 @@
-\\{% extends 'base.html' %}
+{% extends 'base.html' %}
 {% load static %}
 {% block title %}{{ auto.brand.name }} {{ auto.model }}{% endblock %}
 
@@ -163,6 +163,16 @@
                         {{ auto.description|default:"Описание отсутствует"|linebreaks }}
                     </div>
                 </div>
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'toggle_favorite' auto.pk %}" style="margin-top: 1rem;">
+                        {% csrf_token %}
+                        {% if auto.id in favorite_ids %}
+                            <button class="fav-btn" type="submit">Удалить из избранного</button>
+                        {% else %}
+                            <button class="fav-btn" type="submit">★ В избранное</button>
+                        {% endif %}
+                    </form>
+                {% endif %}
             </div>
         </div>
     </div>

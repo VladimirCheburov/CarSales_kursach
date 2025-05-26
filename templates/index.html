@@ -101,7 +101,7 @@
 .widget-title { font-weight: bold; color: #2563eb; text-decoration: none; }
 .widget-img { width: 60px; height: 40px; object-fit: cover; border-radius: 4px; }
 .widget-info { display: flex; align-items: center; gap: 0.5rem; }
-.fav-btn { background: #eee; border: none; border-radius: 4px; padding: 0.3rem 0.7rem; cursor: not-allowed; }
+.fav-btn { background: #eee; border: none; border-radius: 4px; padding: 0.3rem 0.7rem; cursor: pointer; }
 .view-all-link { font-size: 0.95rem; color: #10b981; text-decoration: none; }
 </style>
 
@@ -127,6 +127,16 @@
                     <h4 class="card-title">{{ auto.brand.name }} {{ auto.model }}</h4>
                     <p class="card-text">Год выпуска: {{ auto.year }}</p>
                     <p class="card-price">{{ auto.price|floatformat:0 }} ₽</p>
+                    {% if user.is_authenticated %}
+                        <form method="post" action="{% url 'toggle_favorite' auto.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            {% if auto.id in favorite_ids %}
+                                <button class="fav-btn" type="submit">Удалить из избранного</button>
+                            {% else %}
+                                <button class="fav-btn" type="submit">★ В избранное</button>
+                            {% endif %}
+                        </form>
+                    {% endif %}
                 </div>
             </a>
         </div>
@@ -150,6 +160,16 @@
                     <h3 class="card-title">{{ auto_data.auto.brand.name }} {{ auto_data.auto.model }}</h3>
                     <p class="card-text">Год выпуска: {{ auto_data.auto.year }}</p>
                     <p class="card-price">{{ auto_data.auto.price|floatformat:0 }} ₽</p>
+                    {% if user.is_authenticated %}
+                        <form method="post" action="{% url 'toggle_favorite' auto_data.auto.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            {% if auto_data.auto.id in favorite_ids %}
+                                <button class="fav-btn" type="submit">Удалить из избранного</button>
+                            {% else %}
+                                <button class="fav-btn" type="submit">★ В избранное</button>
+                            {% endif %}
+                        </form>
+                    {% endif %}
                 </div>
             </a>
         </div>
