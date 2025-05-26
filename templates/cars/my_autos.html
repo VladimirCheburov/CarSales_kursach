@@ -1,12 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Список автомобилей{% endblock %}
+{% block title %}Мои объявления{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h1 class="main-header">Каталог автомобилей</h1>
-
+    <h1 class="main-header">Мои объявления</h1>
     <div class="autos-grid">
         {% for auto in autos %}
         <div class="auto-card">
@@ -25,23 +24,19 @@
                     </div>
                 </div>
             </a>
-            {% if user.is_authenticated and auto.profile and user_profile and auto.profile.id == user_profile.id %}
             <div class="auto-actions">
                 <a href="{% url 'edit_auto' auto.pk %}" class="btn edit-btn">Редактировать</a>
                 <a href="{% url 'delete_auto' auto.pk %}" class="btn delete-btn">Удалить</a>
             </div>
-            {% endif %}
         </div>
         {% empty %}
         <div class="empty-list">
             <i class="fas fa-car fa-3x"></i>
-            <p>Автомобилей не найдено</p>
+            <p>У вас пока нет объявлений</p>
         </div>
         {% endfor %}
     </div>
 </div>
-
-
 
 <style>
     .container {
@@ -49,21 +44,18 @@
         margin: 0 auto;
         padding: 2rem 1rem;
     }
-
     .main-header {
         text-align: center;
         color: #2c3e50;
         margin-bottom: 2rem;
         font-size: 2.5rem;
     }
-
     .autos-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         gap: 1.5rem;
         padding: 1rem;
     }
-
     .auto-card {
         background: white;
         border-radius: 12px;
@@ -72,61 +64,34 @@
         display: flex;
         flex-direction: column;
     }
-
-    .auto-photo {
-        height: 220px;
-        background: #f8f9fa;
-        position: relative;
-    }
-
-    .auto-img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .no-photo {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        color: #dee2e6;
-    }
-
     .auto-header {
         padding: 1.5rem;
         border-bottom: 1px solid #eee;
     }
-
     .auto-title {
         margin: 0;
         color: #2c3e50;
         font-size: 1.3rem;
     }
-
     .auto-year {
         color: #7f8c8d;
         font-size: 0.9rem;
     }
-
     .auto-body {
         padding: 1.5rem;
         flex-grow: 1;
     }
-
     .price {
         color: #27ae60;
         font-size: 1.4rem;
         font-weight: 700;
     }
-
     .location {
         color: #34495e;
         display: flex;
         align-items: center;
         gap: 0.5rem;
     }
-
     .auto-actions {
         display: flex;
         gap: 0.8rem;
@@ -134,7 +99,6 @@
         background: #f8f9fa;
         border-top: 1px solid #eee;
     }
-
     .btn {
         flex: 1;
         display: flex;
@@ -148,33 +112,28 @@
         font-size: 0.95rem;
         transition: opacity 0.2s;
     }
-
     .edit-btn {
         background: #3498db;
         color: white;
         text-decoration: none;
     }
-
     .delete-btn {
         background: #e74c3c;
         color: white;
     }
-
     .btn:hover {
         opacity: 0.9;
     }
-
     .empty-list {
         text-align: center;
         grid-column: 1 / -1;
         padding: 4rem 0;
         color: #7f8c8d;
     }
-
     @media (max-width: 768px) {
         .autos-grid {
             grid-template-columns: 1fr;
         }
     }
 </style>
-{% endblock %}
+{% endblock %} 

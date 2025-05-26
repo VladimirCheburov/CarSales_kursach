@@ -122,13 +122,20 @@ def auto_detail(request, pk):
     photos = auto.auto_photos.all()
 
     favorite_ids = []
+    user_profile = None
     if request.user.is_authenticated:
         favorite_ids = list(Auto.objects.filter(favorite__user=request.user).values_list('id', flat=True))
+        try:
+            from cars.models import Profile
+            user_profile = Profile.objects.get(user=request.user)
+        except Profile.DoesNotExist:
+            user_profile = None
 
     return render(request, 'auto_detail.html', {
         'auto': auto,
         'photos': photos,
-        'favorite_ids': favorite_ids
+        'favorite_ids': favorite_ids,
+        'user_profile': user_profile
     })
 
 def auto_create(request):
@@ -441,8 +448,15 @@ def test_view(request):
     return render(request, 'test_template.html', {'autos_with_photos': autos})
 
 def auto_list(request):
-    autos = Auto.objects.all() 
-    return render(request, 'cars/autos_list.html', {'autos': autos})
+    autos = Auto.objects.all()
+    user_profile = None
+    if request.user.is_authenticated:
+        try:
+            from cars.models import Profile
+            user_profile = Profile.objects.get(user=request.user)
+        except Profile.DoesNotExist:
+            user_profile = None
+    return render(request, 'cars/autos_list.html', {'autos': autos, 'user_profile': user_profile})
 
 @login_required
 def favorite_autos(request):
@@ -477,29 +491,48 @@ def edit_auto(request, pk):
         form = AutoForm(instance=auto)
     return render(request, 'cars/edit_auto.html', {'form': form, 'auto': auto})
 
+@login_required
 def delete_auto(request, pk):
-    # получаем объект автомобиля по pk
     auto = get_object_or_404(Auto, pk=pk)
-    auto.delete()  # удаляем объект из базы данных
+    if auto.profile.user != request.user:
+        messages.error(request, 'Вы не можете удалить это объявление.')
+        return redirect('auto_detail', pk=pk)
+    auto.delete()
     return redirect('auto_list')
 
 
 # cars/views.py
+@login_required
 def add_auto(request):
     if request.method == 'POST':
         auto_form = AutoForm(request.POST, request.FILES)
         photo_form = AutoPhotoForm(request.POST, request.FILES)
 
-        if auto_form.is_valid() and photo_form.is_valid():
-            # Сохраняем автомобиль без привязки к профилю
-            auto = auto_form.save()
+        if auto_form.is_valid():
+            auto = auto_form.save(commit=False)
+            try:
+                profile = Profile.objects.get(user=request.user)
+            except Profile.DoesNotExist:
+                messages.error(request, 'У вашего пользователя нет профиля.')
+                return redirect('add_auto')
+            auto.profile = profile
+            auto.save()
 
-            # Сохраняем фотографию
-            photo = photo_form.save(commit=False)
-            photo.auto = auto
-            photo.save()
+            # Сохраняем фотографию, только если она заполнена
+            if photo_form.is_valid() and photo_form.cleaned_data.get('url'):
+                photo = photo_form.save(commit=False)
+                photo.auto = auto
+                photo.save()
 
             return redirect('auto_list')
+        else:
+            # Показываем ошибки валидации
+            for field, errors in auto_form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{auto_form.fields[field].label}: {error}")
+            for field, errors in photo_form.errors.items():
+                for error in errors:
+                    messages.error(request, f"Фото: {error}")
     else:
         auto_form = AutoForm()
         photo_form = AutoPhotoForm()
@@ -520,3 +553,12 @@ def toggle_favorite(request, pk):
     else:
         messages.success(request, 'Автомобиль добавлен в избранное!')
     return redirect(request.META.get('HTTP_REFERER', 'index'))
+
+@login_required
+def my_autos(request):
+    try:
+        profile = Profile.objects.get(user=request.user)
+    except Profile.DoesNotExist:
+        profile = None
+    autos = Auto.objects.filter(profile=profile) if profile else []
+    return render(request, 'cars/my_autos.html', {'autos': autos})

@@ -173,6 +173,27 @@
                         {% endif %}
                     </form>
                 {% endif %}
+                {% if user.is_authenticated and auto.profile and user_profile and auto.profile.id == user_profile.id %}
+                    <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                        <a href="{% url 'edit_auto' auto.pk %}" class="btn btn-primary">Редактировать</a>
+                        <a href="{% url 'delete_auto' auto.pk %}" class="btn btn-danger">Удалить</a>
+                    </div>
+                {% endif %}
+                <div style="margin-top: 2rem; padding: 1.5rem; background: #f8fafc; border-radius: 12px; text-align: center;">
+                    <h4 style="margin-bottom: 1rem;">Купить отчет об автомобиле</h4>
+                    <p>Подробная история, проверки по базам, юридическая чистота</p>
+                    <button class="btn btn-warning" style="margin-top: 1rem; background: #fbbf24; color: #222; border: none; border-radius: 8px; padding: 0.7rem 1.5rem; font-weight: 600; cursor: pointer;">Купить отчет за 149 руб</button>
+                </div>
+                <div style="margin-top: 2rem;">
+                    <h4>Похожие автомобили</h4>
+                    <ul style="padding-left: 1.2rem;">
+                        {% for similar in auto.brand.auto_set.all|slice:':3' %}
+                            {% if similar.id != auto.id %}
+                                <li><a href="{{ similar.get_absolute_url }}">{{ similar.brand.name }} {{ similar.model }} ({{ similar.year }})</a></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
         </div>
     </div>

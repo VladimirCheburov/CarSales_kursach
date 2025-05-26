@@ -17,6 +17,7 @@ from news.views import category_summary
 from cars.views import test_view
 from cars.views import favorite_autos
 from cars.views import autos_by_region, toggle_favorite
+from cars.views import my_autos
 router = DefaultRouter()
 router.register(r'autos', AutoViewSet, basename='autos')
 router.register(r'brands', BrandViewSet, basename='brands')
@@ -71,6 +72,7 @@ urlpatterns = [
     path('favorite-autos/', favorite_autos, name='favorite_autos'),
     path('autos/region/<int:region_id>/', autos_by_region, name='autos_by_region'),
     path('autos/<int:pk>/toggle_favorite/', toggle_favorite, name='toggle_favorite'),
+    path('my-autos/', my_autos, name='my_autos'),
     ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if settings.DEBUG:

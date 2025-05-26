@@ -3,10 +3,13 @@
 {% block title %}Удалить автомобиль{% endblock %}
 
 {% block content %}
-    <h1>Удалить автомобиль</h1>
-    <form method="POST">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Удалить</button>
-    </form>
-    <a href="{% url 'auto_list' %}" class="btn btn-secondary">Отменить</a>
+    <div class="container" style="max-width: 600px; margin: 2rem auto; background: #fff; border-radius: 1rem; box-shadow: 0 4px 16px rgba(0,0,0,0.07); padding: 2rem;">
+        <h1 style="color: #e74c3c;">Удалить автомобиль</h1>
+        <p>Вы уверены, что хотите удалить автомобиль <b>{{ auto.brand.name }} {{ auto.model }} ({{ auto.year }})</b>?</p>
+        <form method="POST" style="margin-bottom: 1rem;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Удалить</button>
+            <a href="{{ auto.get_absolute_url }}" class="btn btn-secondary" style="margin-left: 1rem;">Отменить</a>
+        </form>
+    </div>
 {% endblock %}

@@ -7,3 +7,4 @@ class CarsConfig(AppConfig):
 
     def ready(self):
         import cars.tasks  # импортируем задачи Celery при загрузке приложения
+        import cars.signals

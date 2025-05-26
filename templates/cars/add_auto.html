@@ -166,6 +166,13 @@
         </div>
 
         <div class="form-section">
+            {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                        <li style="color: #e53e3e; margin-bottom: 0.5rem;">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
 
