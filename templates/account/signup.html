@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load custom_tags %}
+{% block title %}Регистрация{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background-image: url('https://avatars.mds.yandex.net/i?id=392af27c4f535b3f66e87610af2674fc_l-8000127-images-thumbs&n=13');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }
+    .registration-container {
+        max-width: 500px;
+        margin: 4rem auto;
+        padding: 2rem;
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+    .registration-title {
+        text-align: center;
+        font-size: 2rem;
+        margin-bottom: 2rem;
+        color: var(--dark);
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--gray);
+    }
+    .form-control {
+        width: 100%;
+        padding: 0.8rem 1rem;
+        font-size: 1rem;
+        border: 1px solid var(--light-gray);
+        border-radius: 8px;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+    .btn-submit {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: white;
+        background-color: var(--primary);
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .btn-submit:hover {
+        background-color: var(--primary-dark);
+    }
+    .login-link {
+        text-align: center;
+        margin-top: 1.5rem;
+    }
+    .login-link a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+</style>
+
+<div class="registration-container">
+    <h1 class="registration-title">Создать аккаунт</h1>
+    <form method="post" action="{% url 'account_signup' %}" class="signup">
+        {% csrf_token %}
+        
+        {% for field in form %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            {{ field|add_class:"form-control" }}
+            {% if field.help_text %}
+            <small class="form-text text-muted">{{ field.help_text }}</small>
+            {% endif %}
+            {% for error in field.errors %}
+            <div class="invalid-feedback" style="color: red; font-size: 0.875em; margin-top: 0.25rem;">
+                {{ error }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        
+        {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+        
+        <button type="submit" class="btn-submit">Зарегистрироваться</button>
+    </form>
+    <p class="login-link">
+        Уже есть аккаунт? <a href="{% url 'account_login' %}">Войти</a>
+    </p>
+</div>
+{% endblock %} 

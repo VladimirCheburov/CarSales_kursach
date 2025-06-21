@@ -29,8 +29,12 @@ def get_recent_autos(limit=3):
     return Auto.objects.order_by('-created_at')[:limit]
 
 @register.simple_tag
-def not_available_autos():
+def not_available_autos(limit=4):
     """
     Возвращает автомобили, которые проданы
     """
-    return Auto.objects.exclude(sell_status__name__iexact="В продаже")
+    return Auto.objects.exclude(sell_status__name__iexact="В продаже").order_by('-created_at')[:limit]
+
+@register.filter(name='add_class')
+def add_class(value, arg):
+    return value.as_widget(attrs={'class': arg})

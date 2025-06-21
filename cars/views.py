@@ -97,6 +97,13 @@ def index(request):
     except NewCategory.DoesNotExist:
         advice_news = []
 
+    # Рекомендованные автомобили
+    recommended_autos_list = Auto.objects.filter(
+        (Q(brand__name__icontains="BMW") | Q(brand__name__icontains="Mercedes-Benz")) &
+        ~Q(price__gte=5000000) &
+        Q(year__gte=2015)
+    )[:4]
+
     favorite_ids = []
     if request.user.is_authenticated:
         favorite_ids = list(Auto.objects.filter(favorite__user=request.user).values_list('id', flat=True))
@@ -104,11 +111,12 @@ def index(request):
     return render(request, 'index.html', {
         'autos_with_photos': autos_with_photos,
         'autos_page': autos_page,
-        'autos': autos, 
+        'autos': autos,
         'latest_news': latest_news,
         'popular_autos': popular_autos,
         'advice_news': advice_news,
         'favorite_ids': favorite_ids,
+        'recommended_autos_list': recommended_autos_list,
     })
 
 def auto_detail(request, pk):
