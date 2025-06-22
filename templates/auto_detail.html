@@ -3,269 +3,456 @@
 {% block title %}{{ auto.brand.name }} {{ auto.model }}{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 <style>
-    :root {
-        --image-height: 60vh;
-        --primary-color: #2563eb;
-        --secondary-color: #3b82f6;
-    }
-
-    .adaptive-image {
-        height: 400px;
-        min-height: 300px;
-        max-height: 400px;
-        object-fit: contain;
-        border-radius: 15px;
-        width: 100%;
-        cursor: pointer;
-        background: #f8fafc;
-    }
-
-    .detail-card {
-        background: #ffffff;
-        border-radius: 20px;
-        padding: 2rem;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    }
-
-    .spec-card {
-        background: #f8fafc;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        transition: transform 0.2s ease;
-    }
-
-    .spec-card:hover {
-        transform: translateY(-3px);
-    }
-
-    .icon-wrapper {
-        width: 40px;
-        height: 40px;
-        background: rgba(37, 99, 235, 0.1);
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 1rem;
-    }
-
-    .info-label {
-        color: #000;
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
-
-    .info-value {
-        color: #64748b;
-        font-size: 1rem;
-    }
-
-    .price-badge {
-        background: #2563eb;
-        color: white;
-        padding: 0.8rem 1.5rem;
-        border-radius: 8px;
-        font-size: 1.5rem;
-    }
-
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 9999;
-        left: 0; top: 0; width: 100vw; height: 100vh;
-        background: rgba(0,0,0,0.8);
-        align-items: center; justify-content: center;
-    }
-
-    .modal.active { display: flex; }
-
-    .modal img { max-width: 90vw; max-height: 90vh; border-radius: 12px; }
-
-    .modal-close { position: absolute; top: 30px; right: 40px; color: #fff; font-size: 2.5rem; cursor: pointer; }
+:root {
+    --primary: #2563eb;
+    --secondary: #f8fafc;
+    --radius: 22px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.10);
+}
+.auto-detail-card {
+    max-width: 800px;
+    margin: 2.5rem auto;
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 2.5rem 2.2rem 2.2rem 2.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.7rem;
+    align-items: stretch;
+}
+.auto-detail-slider-wrapper {
+    width: 100%;
+    max-width: 600px;
+    aspect-ratio: 16/9;
+    margin: 0 auto;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #e5e7eb;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    position: relative;
+}
+.carousel { position: relative; height: 100%; }
+.carousel-inner { position: relative; width: 100%; overflow: hidden; height: 100%; }
+.carousel-item { position: relative; display: none; float: left; width: 100%; margin-right: -100%; backface-visibility: hidden; transition: transform .6s ease-in-out; height: 100%; }
+.carousel-item.active { display: block; }
+.carousel-control-prev, .carousel-control-next { position: absolute; top: 0; bottom: 0; z-index: 1; display: flex; align-items: center; justify-content: center; width: 15%; padding: 0; color: #fff; text-align: center; background: 0 0; border: 0; opacity: .5; transition: opacity .15s ease; }
+.carousel-control-prev:focus, .carousel-control-prev:hover, .carousel-control-next:focus, .carousel-control-next:hover { opacity: .9; }
+.carousel-control-prev { left: 0; }
+.carousel-control-next { right: 0; }
+.carousel-control-prev-icon, .carousel-control-next-icon { display: inline-block; width: 2rem; height: 2rem; background-repeat: no-repeat; background-position: 50%; background-size: 100% 100%; }
+.carousel-control-prev-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3e%3cpath d='M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z'/%3e%3c/svg%3e"); }
+.carousel-control-next-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3e%3cpath d='M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e"); }
+.visually-hidden { position: absolute!important; width: 1px!important; height: 1px!important; padding: 0!important; margin: -1px!important; overflow: hidden!important; clip: rect(0,0,0,0)!important; white-space: nowrap!important; border: 0!important; }
+.carousel-item img {
+    cursor: zoom-in;
+    object-fit: contain;
+    height: 100%;
+    width: 100%;
+}
+.auto-detail-title {
+    font-size: 2.1rem;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 0.2rem;
+    letter-spacing: 1px;
+    text-align: left;
+}
+.auto-detail-price {
+    font-size: 2rem;
+    color: var(--primary);
+    font-weight: 800;
+    margin-bottom: 0.7rem;
+    letter-spacing: 1px;
+    text-align: left;
+}
+.auto-detail-premium {
+    display: flex; align-items: center; gap: 0.5em;
+    justify-content: flex-start;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #ffd700;
+    margin-bottom: 1.2rem;
+    letter-spacing: 2px;
+}
+.auto-detail-premium .premium-icon {
+    font-size: 1.3em;
+}
+.auto-detail-premium .premium-text {
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #ffd700;
+}
+.auto-detail-chars-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem 1.2rem;
+    margin-bottom: 0.7rem;
+    width: 100%;
+}
+.auto-detail-char {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 0.7rem 0.7rem;
+    font-size: 1.01rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    transition: box-shadow 0.2s;
+    min-width: 0;
+    word-break: break-word;
+    justify-content: flex-start;
+}
+.auto-detail-char i {
+    font-size: 1.2em; color: var(--primary);
+}
+.auto-detail-chars-row3 {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1rem 1.2rem;
+    align-items: stretch;
+    margin-bottom: 0.7rem;
+}
+.auto-detail-char-single {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 0.7rem 0.7rem;
+    font-size: 1.01rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    min-width: 0;
+    word-break: break-word;
+    justify-content: flex-start;
+}
+.auto-detail-all-chars-btn {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    background: #e0e7ff;
+    color: var(--primary);
+    font-weight: 600;
+    border: none;
+    font-size: 1.01rem;
+    transition: background 0.2s, color 0.2s;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.07);
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.5em;
+}
+.auto-detail-all-chars-btn:hover {
+    background: var(--primary);
+    color: #fff;
+}
+.auto-detail-all-chars {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(.4,0,.2,1);
+    background: #f8fafc;
+    border-radius: 10px;
+    margin-bottom: 0.7rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    padding: 0 1rem;
+}
+.auto-detail-all-chars.open {
+    max-height: 400px;
+    padding: 1rem 1rem;
+}
+.auto-detail-desc {
+    background: #f3f4f6;
+    border-radius: 10px;
+    padding: 1.2rem 1.2rem 1.2rem 1.5rem;
+    font-size: 1.08rem;
+    color: #444;
+    margin-bottom: 1.2rem;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.03);
+}
+.auto-detail-actions {
+    display: flex; gap: 1rem; flex-wrap: wrap;
+    margin-bottom: 1.2rem;
+}
+.auto-detail-actions .btn, .auto-detail-actions button {
+    font-size: 1.08rem;
+    border-radius: 8px;
+    padding: 0.7rem 1.5rem;
+    font-weight: 600;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.07);
+}
+.auto-detail-actions .btn-primary, .auto-detail-actions .btn-success {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+}
+.auto-detail-actions .btn-primary:hover, .auto-detail-actions .btn-success:hover {
+    background: #1746a2;
+}
+.auto-detail-actions .btn-danger {
+    background: #e53e3e;
+    color: #fff;
+    border: none;
+}
+.auto-detail-actions .btn-danger:hover {
+    background: #b91c1c;
+}
+.auto-detail-actions .fav-btn {
+    background: #fff;
+    color: var(--primary);
+    border: 1.5px solid var(--primary);
+    transition: background 0.2s, color 0.2s;
+}
+.auto-detail-actions .fav-btn:hover {
+    background: var(--primary);
+    color: #fff;
+}
+.auto-detail-status-form {
+    background: #f3f4f6;
+    border-radius: 12px;
+    padding: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.03);
+}
+.auto-detail-status-form label {
+    font-weight: 600;
+    color: var(--dark);
+}
+.auto-detail-status-form .form-control {
+    flex-grow: 1;
+    min-width: 150px;
+    padding: 0.6rem 1rem;
+    font-size: 1rem;
+    background-color: #fff;
+    border: 1px solid var(--light-gray);
+    border-radius: 8px;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+}
+.auto-detail-status-form .btn {
+    padding: 0.6rem 1.5rem;
+    font-size: 1.08rem;
+    border-radius: 8px;
+    font-weight: 600;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+}
+.auto-detail-similar {
+    margin-top: 1.5rem;
+    width: 100%;
+}
+.auto-detail-similar-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.7rem;
+    color: #222;
+}
+.auto-detail-similar-list {
+    display: flex;
+    gap: 1.2rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+}
+.auto-detail-similar-card {
+    min-width: 150px;
+    background: #f8fafc;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    padding: 0.7rem;
+    text-align: center;
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+.auto-detail-similar-card:hover {
+    box-shadow: 0 4px 16px rgba(37,99,235,0.13);
+    transform: translateY(-3px) scale(1.03);
+}
+.auto-detail-similar-card img {
+    width: 100%; height: 70px; object-fit: cover; border-radius: 7px; margin-bottom: 0.5rem;
+}
+.auto-detail-similar-card .card-title {
+    font-size: 1.01rem; font-weight: 600; color: #222;
+}
+.auto-detail-similar-card .card-price {
+    color: var(--primary); font-weight: 700; font-size: 0.98rem;
+}
+@media (max-width: 700px) {
+    .auto-detail-card { padding: 1.2rem 0.5rem; }
+    .auto-detail-title { font-size: 1.3rem; }
+    .auto-detail-price { font-size: 1.2rem; }
+    .auto-detail-chars-grid { grid-template-columns: 1fr 1fr; }
+    .auto-detail-chars-row3 { grid-template-columns: 1fr 1fr; }
+}
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.85);
+    align-items: center; justify-content: center;
+    transition: opacity 0.2s;
+}
+.modal.active { display: flex; }
+.modal img { max-width: 92vw; max-height: 92vh; border-radius: 14px; box-shadow: 0 4px 32px rgba(0,0,0,0.25); }
+.modal-close { position: absolute; top: 30px; right: 40px; color: #fff; font-size: 2.5rem; cursor: pointer; z-index: 2; }
 </style>
 
-<main class="container-fluid px-lg-5 mt-4">
-    <div class="row g-4">
-        <!-- Image Section -->
-        <div class="col-lg-8">
-            <div class="card border-0 bg-transparent">
-                {% if photos %}
-                <div id="mainCarousel" class="carousel slide">
-                    <div class="carousel-inner">
-                        {% for photo in photos %}
-                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                            <img src="{{ photo.photo.url }}"
-                                 class="d-block w-100 adaptive-image"
-                                 alt="{{ auto.brand.name }} {{ auto.model }}">
-                        </div>
-                        {% endfor %}
-                    </div>
+<div class="auto-detail-card">
+    <div class="auto-detail-slider-wrapper">
+        {% if photos %}
+        <div id="autoPhotoCarousel" class="carousel slide" data-bs-ride="false">
+            <div class="carousel-inner">
+                {% for photo in photos %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                    <img src="{{ photo.photo.url }}" class="d-block w-100" alt="{{ auto.brand.name }} {{ auto.model }}">
                 </div>
-                {% else %}
-                <div class="adaptive-image bg-light d-flex align-items-center justify-content-center">
-                    <i class="bi bi-image text-muted" style="font-size: 3rem"></i>
-                </div>
-                {% endif %}
+                {% endfor %}
             </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#autoPhotoCarousel" data-bs-slide="prev">
+                <i class="bi bi-chevron-left" style="font-size: 1.5rem; color: white;"></i>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#autoPhotoCarousel" data-bs-slide="next">
+                <i class="bi bi-chevron-right" style="font-size: 1.5rem; color: white;"></i>
+                <span class="visually-hidden">Next</span>
+            </button>
         </div>
+        {% else %}
+        <i class="bi bi-image text-muted" style="font-size:3rem; position:absolute; top:50%; left:50%; transform: translate(-50%,-50%);"></i>
+        {% endif %}
+    </div>
 
-        <!-- Details Section -->
-        <div class="col-lg-4">
-            <div class="detail-card">
-                <!-- Price -->
-                <div class="d-flex justify-content-end mb-4">
-                    <div class="price-badge">
-                        {{ auto.price|floatformat:0 }} ₽
-                    </div>
-                </div>
-
-                <!-- Specifications -->
-                <div class="row g-3 mb-4">
-                    <div class="col-6">
-                        <div class="spec-card">
-                            <div class="icon-wrapper">
-                                <i class="bi bi-speedometer2 text-primary"></i>
-                            </div>
-                            <div class="info-label">Пробег</div>
-                            <div class="info-value">{{ auto.mileage }} км</div>
-                        </div>
-                    </div>
-
-                    <div class="col-6">
-                        <div class="spec-card">
-                            <div class="icon-wrapper">
-                                <i class="bi bi-car-front text-primary"></i>
-                            </div>
-                            <div class="info-label">Кузов</div>
-                            <div class="info-value">{{ auto.body_type.name }}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Additional Info -->
-                <div class="mb-4">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <i class="bi bi-geo-alt fs-5 text-primary"></i>
-                        <div>
-                            <div class="info-label">Локация</div>
-                            <div class="info-value">{{ auto.region.name }}</div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <i class="bi bi-calendar3 fs-5 text-primary"></i>
-                        <div>
-                            <div class="info-label">Год выпуска</div>
-                            <div class="info-value">{{ auto.year }}</div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex align-items-center gap-3">
-                        <i class="bi bi-clipboard-check fs-5 text-primary"></i>
-                        <div>
-                            <div class="info-label">Статус</div>
-                            <div class="info-value">{{ auto.sell_status.name }}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Description -->
-                <div class="border-top pt-4">
-                    <div class="d-flex align-items-center gap-2 mb-3">
-                        <i class="bi bi-file-text fs-5 text-primary"></i>
-                        <div class="info-label">Описание</div>
-                    </div>
-                    <div class="text-secondary lh-lg">
-                        {{ auto.description|default:"Описание отсутствует"|linebreaks }}
-                    </div>
-                </div>
-                {% if user.is_authenticated %}
-                    <form method="post" action="{% url 'toggle_favorite' auto.pk %}" style="margin-top: 1rem;">
-                        {% csrf_token %}
-                        {% if auto.id in favorite_ids %}
-                            <button class="fav-btn" type="submit">Удалить из избранного</button>
-                        {% else %}
-                            <button class="fav-btn" type="submit">★ В избранное</button>
-                        {% endif %}
-                    </form>
-                {% endif %}
-                {% if user.is_authenticated and auto.profile and user_profile and auto.profile.id == user_profile.id %}
-                    <div style="margin-top: 1rem; display: flex; gap: 1rem;">
-                        <a href="{% url 'edit_auto' auto.pk %}" class="btn btn-primary">Редактировать</a>
-                        <a href="{% url 'delete_auto' auto.pk %}" class="btn btn-danger">Удалить</a>
-                    </div>
-                {% endif %}
-                <div style="margin-top: 2rem; padding: 1.5rem; background: #f8fafc; border-radius: 12px; text-align: center;">
-                    <h4 style="margin-bottom: 1rem;">Купить отчет об автомобиле</h4>
-                    <p>Подробная история, проверки по базам, юридическая чистота</p>
-                    <button class="btn btn-warning" style="margin-top: 1rem; background: #fbbf24; color: #222; border: none; border-radius: 8px; padding: 0.7rem 1.5rem; font-weight: 600; cursor: pointer;">Купить отчет за 149 руб</button>
-                </div>
-                <div style="margin-top: 2rem;">
-                    <h4>Похожие автомобили</h4>
-                    <ul style="padding-left: 1.2rem;">
-                        {% for similar in auto.brand.auto_set.all|slice:':3' %}
-                            {% if similar.id != auto.id %}
-                                <li><a href="{{ similar.get_absolute_url }}">{{ similar.brand.name }} {{ similar.model }} ({{ similar.year }})</a></li>
-                            {% endif %}
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% if user.is_staff or user.is_superuser %}
-                <div style="margin-top: 2rem;">
-                    <form method="post" action="/api/autos/{{ auto.id }}/update-status/" style="display: flex; gap: 1rem; align-items: center;">
-                        {% csrf_token %}
-                        <label for="sell_status_id" style="margin-bottom: 0;">Сменить статус:</label>
-                        <select name="sell_status_id" id="sell_status_id" class="form-control" style="width: auto;">
-                            {% for status in sell_statuses %}
-                                <option value="{{ status.id }}" {% if auto.sell_status.id == status.id %}selected{% endif %}>{{ status.name }}</option>
-                            {% endfor %}
-                        </select>
-                        <button type="submit" class="btn btn-outline-primary">Обновить</button>
-                    </form>
-                    {% if status_updated %}
-                    <div style="margin-top:1.5rem;">
-                        <a href="/" class="btn btn-success">Вернуться на главную</a>
-                    </div>
+    <div class="auto-detail-title">
+        {{ auto.brand.name }} {{ auto.model }} {{ auto.year }}
+    </div>
+    <div class="auto-detail-price">
+        {{ auto.price|floatformat:0 }} ₽
+    </div>
+    {% if auto.is_premium %}
+    <div class="auto-detail-premium">
+        <span class="premium-icon">🔥</span>
+        <span class="premium-text"><b>ПРЕМИУМ</b></span>
+        <span class="premium-icon">🔥</span>
+    </div>
+    {% endif %}
+    <div class="auto-detail-chars-grid">
+        <div class="auto-detail-char"><i class="bi bi-car-front"></i> <span>Кузов:</span> {{ auto.body_type.name }}</div>
+        <div class="auto-detail-char"><i class="bi bi-calendar3"></i> <span>Год:</span> {{ auto.year }}</div>
+        <div class="auto-detail-char"><i class="bi bi-gear"></i> <span>Двигатель:</span> {{ auto.engine_type.name }}</div>
+        <div class="auto-detail-char"><i class="bi bi-speedometer2"></i> <span>Пробег:</span> {{ auto.mileage }} км</div>
+        <div class="auto-detail-char"><i class="bi bi-droplet"></i> <span>Цвет:</span> {{ auto.color.name }}</div>
+        <div class="auto-detail-char"><i class="bi bi-geo-alt"></i> <span>Регион:</span> {{ auto.region.name }}</div>
+    </div>
+    <div class="auto-detail-chars-row3">
+        <div class="auto-detail-char-single"><i class="bi bi-clipboard-check"></i> <span>Статус:</span> {{ auto.sell_status.name }}</div>
+        <button class="auto-detail-all-chars-btn" id="all-chars-btn"><i class="bi bi-list-ul"></i>Все характеристики</button>
+    </div>
+    <div class="auto-detail-all-chars" id="all-chars-block">
+        <b>Полный список характеристик:</b>
+        <ul style="margin:0.7em 0 0 1.2em; padding:0; color:#444; font-size:1em;">
+            <li>VIN: {{ auto.vin|default:'XXXXXXXXXXXX' }}</li>
+            <li>Комплектация: {{ auto.complectation|default:'M2' }}</li>
+            <li>Владельцев по ПТС: {{ auto.owners_count|default:'1' }}</li>
+            <li>Руль: {{ auto.steering|default:'Левый' }}</li>
+            <li>Привод: {{ auto.drive_type|default:'Задний' }}</li>
+            <li>Коробка передач: {{ auto.transmission|default:'Автоматическая' }}</li>
+            <li>Объем двигателя: {{ auto.engine_volume|default:'3.0' }}</li>
+            <li>Мощность: {{ auto.engine_power|default:'453' }}</li>
+            <li>Тип топлива: {{ auto.fuel_type|default:'Бензин' }}</li>
+            <li>...</li>
+        </ul>
+    </div>
+    <div class="auto-detail-desc">
+        <b>Описание:</b><br>
+        {{ auto.description|default:"Описание отсутствует"|linebreaks }}
+    </div>
+    <div class="auto-detail-actions">
+        {% if user.is_authenticated and auto.profile and user_profile and auto.profile.id == user_profile.id %}
+            <a href="{% url 'edit_auto' auto.pk %}" class="btn btn-primary">Редактировать</a>
+            <a href="{% url 'delete_auto' auto.pk %}" class="btn btn-danger">Удалить</a>
+        {% endif %}
+        {% if user.is_authenticated %}
+        <form method="post" action="{% url 'toggle_favorite' auto.pk %}" style="display:inline;">
+            {% csrf_token %}
+            {% if auto.id in favorite_ids %}
+                <button class="fav-btn" type="submit">Удалить из избранного</button>
+            {% else %}
+                <button class="fav-btn" type="submit">★ В избранное</button>
+            {% endif %}
+        </form>
+        {% endif %}
+    </div>
+    {% if user.is_staff or user.is_superuser %}
+    <div class="auto-detail-status-form">
+        <form method="post" action="/api/autos/{{ auto.id }}/update-status/" style="display:contents;">
+            {% csrf_token %}
+            <label for="sell_status_id">Сменить статус:</label>
+            <select name="sell_status_id" id="sell_status_id" class="form-control">
+                {% for status in sell_statuses %}
+                    <option value="{{ status.id }}" {% if auto.sell_status.id == status.id %}selected{% endif %}>{{ status.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn">Обновить</button>
+        </form>
+        {% if status_updated %}
+        <a href="/" class="btn btn-success">Вернуться на главную</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    <div class="auto-detail-similar">
+        <div class="auto-detail-similar-title">Похожие автомобили</div>
+        <div class="auto-detail-similar-list">
+            {% for similar in auto.brand.auto_set.all|slice:':6' %}
+                {% if similar.id != auto.id %}
+                <a href="{{ similar.get_absolute_url }}" class="auto-detail-similar-card">
+                    {% if similar.auto_photos.first %}
+                    <img src="{{ similar.auto_photos.first.photo.url }}" alt="{{ similar.brand.name }} {{ similar.model }}">
+                    {% else %}
+                    <img src="{% static 'images/no_image_available.png' %}" alt="Нет изображения">
                     {% endif %}
-                </div>
+                    <div class="card-title">{{ similar.brand.name }} {{ similar.model }}</div>
+                    <div class="card-price">{{ similar.price|floatformat:0 }} ₽</div>
+                    <div style="font-size:0.95em;color:#888;">{{ similar.year }}</div>
+                </a>
                 {% endif %}
-            </div>
+            {% endfor %}
         </div>
     </div>
-</main>
-
-<script>
-    // Image Height Adjustment
-    function adjustImageHeight() {
-        const viewportWidth = window.innerWidth;
-        const baseHeight = Math.min(viewportWidth * 0.6, 700);
-        document.documentElement.style.setProperty('--image-height', `${baseHeight}px`);
-    }
-
-    window.addEventListener('resize', adjustImageHeight);
-    adjustImageHeight();
-
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.adaptive-image').forEach(function(img) {
-            img.addEventListener('click', function() {
-                var modal = document.getElementById('img-modal');
-                var modalImg = document.getElementById('modal-img');
-                modalImg.src = img.src;
-                modal.classList.add('active');
-            });
-        });
-        var modal = document.getElementById('img-modal');
-        if (modal) {
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal || e.target.classList.contains('modal-close')) {
-                    modal.classList.remove('active');
-                }
-            });
-        }
-    });
-</script>
-
+</div>
 <div id="img-modal" class="modal"><span class="modal-close">&times;</span><img id="modal-img" src="" alt="Фото"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Увеличение фото в модалке
+function setupModalPhoto() {
+    document.querySelectorAll('.carousel-item img').forEach(img => {
+        img.addEventListener('click', function() {
+            let modal = document.getElementById('img-modal');
+            let modalImg = document.getElementById('modal-img');
+            modalImg.src = this.src;
+            modal.classList.add('active');
+        });
+    });
+    var modal = document.getElementById('img-modal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal || e.target.classList.contains('modal-close')) {
+                modal.classList.remove('active');
+                document.getElementById('modal-img').src = '';
+            }
+        });
+    }
+}
+setupModalPhoto();
+// Кнопка "Все характеристики"
+document.getElementById('all-chars-btn').addEventListener('click', function() {
+    const block = document.getElementById('all-chars-block');
+    block.classList.toggle('open');
+});
+</script>
 {% endblock %}
