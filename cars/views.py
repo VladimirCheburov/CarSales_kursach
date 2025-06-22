@@ -345,6 +345,32 @@ class AutoViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": f"Ошибка сервера: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+    @action(methods=['POST'], detail=True, url_path='update-status')
+    def update_sell_status(self, request, pk=None):
+        """
+        Обновление статуса продажи конкретного автомобиля.
+        """
+        try:
+            auto = self.get_object()
+            new_status_id = request.data.get('sell_status_id')
+            
+            if not new_status_id:
+                return Response({"error": "Необходимо указать sell_status_id"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                new_status = SellStatus.objects.get(id=new_status_id)
+            except SellStatus.DoesNotExist:
+                return Response({"error": "Указанный статус продажи не найден"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            auto.sell_status = new_status
+            auto.save()
+            
+            serializer = self.get_serializer(auto)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({"error": f"Ошибка сервера: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 # поиск по содержанию
 class AutoSearchAPIView(ListAPIView):
     queryset = Auto.objects.all()

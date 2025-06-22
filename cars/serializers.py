@@ -77,3 +77,8 @@ class AutoSerializer(serializers.ModelSerializer):
         if value > date.today().year:
             raise serializers.ValidationError("Год выпуска автомобиля не может быть в будущем.")
         return value
+
+    def validate_price(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Цена автомобиля должна быть больше нуля.")
+        return value

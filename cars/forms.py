@@ -105,6 +105,12 @@ class AutoForm(forms.ModelForm):
             raise forms.ValidationError("Год выпуска автомобиля не может быть в будущем.")
         return year
 
+    def clean_price(self):
+        price = self.cleaned_data.get('price')
+        if price and price <= 0:
+            raise forms.ValidationError("Цена автомобиля должна быть больше нуля.")
+        return price
+
 class AutoPhotoForm(forms.ModelForm):
     class Meta:
         model = Photo
