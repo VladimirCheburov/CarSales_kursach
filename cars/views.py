@@ -590,9 +590,8 @@ def add_auto(request):
 
             # Сохраняем фотографию, только если она заполнена
             if photo_form.is_valid() and photo_form.cleaned_data.get('url'):
-                photo = photo_form.save(commit=False)
-                photo.auto = auto
-                photo.save()
+                photo = photo_form.save()
+                AutoPhoto.objects.create(auto=auto, photo=photo)
 
             return redirect('auto_list')
         else:
