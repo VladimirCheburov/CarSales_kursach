@@ -26,18 +26,24 @@
         <h2><a href="{% url 'news_list' %}">Последние новости</a></h2>
         <a href="{% url 'news_list' %}" class="view-all-link">Смотреть все</a>
     </div>
-    <ol class="widget-list">
+    <div class="widget-list news-widget-list">
         {% for news in latest_news %}
-        <li class="widget-item">
-            <div class="widget-card">
+        <div class="news-widget-item">
+            {# Чтобы изменить миниатюру, укажите main_photo у новости в админке или замените путь ниже #}
+            {% if news.main_photo %}
+                <img src="{{ news.main_photo.url }}" alt="Фото новости" class="news-widget-thumb">
+            {% else %}
+                <img src="{% static 'images/news_default.jpg' %}" alt="Нет изображения" class="news-widget-thumb">
+            {% endif %}
+            <div>
                 <a href="{% url 'news_detail' news.id %}" class="widget-title">{{ news.title }}</a>
                 <div class="widget-info">
                     <span class="widget-date">{{ news.created_at|date:"d.m.Y" }}</span>
                 </div>
             </div>
-        </li>
+        </div>
         {% endfor %}
-    </ol>
+    </div>
 </div>
 
 <!-- Виджет 2: Популярные автомобили -->
@@ -48,33 +54,42 @@
     </div>
     <div class="horizontal-scroll">
         {% for auto in popular_autos %}
-        <div class="card" style="min-width: 250px;">
-            <a href="{{ auto.get_absolute_url }}">
-                {% if auto.auto_photos.first %}
-                    <img src="{{ auto.auto_photos.first.photo.url }}" alt="Фото {{ auto.brand.name }}" class="card-img">
-                {% else %}
-                    <img src="{% static 'images/no_image_available.png' %}" alt="Нет изображения" class="card-img">
-                {% endif %}
+        <div class="card" style="min-width: 250px; display:flex; flex-direction:column; position:relative;">
+            <a href="{{ auto.get_absolute_url }}" style="text-decoration:none;color:inherit;display:block;flex:1;">
+                <div style="position:relative;">
+                    {% if auto.auto_photos.first %}
+                        <img src="{{ auto.auto_photos.first.photo.url }}" alt="Фото {{ auto.brand.name }}" class="card-img">
+                    {% else %}
+                        <img src="{% static 'images/no_image_available.png' %}" alt="Нет изображения" class="card-img">
+                    {% endif %}
+                    {% if auto.is_premium %}
+                    <div class="premium-overlay">
+                        <span class="premium-icon">🔥</span>
+                        <span class="premium-text"><b>ПРЕМИУМ</b></span>
+                        <span class="premium-icon">🔥</span>
+                    </div>
+                    {% endif %}
+                </div>
                 <div class="card-body">
                     <h4 class="card-title">{{ auto.brand.name }} {{ auto.model }}</h4>
                     <p class="card-text">Год выпуска: {{ auto.year }}</p>
                     <p class="card-price">{{ auto.price|floatformat:0 }} ₽</p>
                     <p class="card-views">Просмотров: {{ auto.views }}</p>
                     <span class="widget-region">
-                        <a href="{% url 'autos_by_region' auto.region.id %}">{{ auto.region.name }}</a>
+                        <a href="{% url 'autos_by_region' auto.region.id %}" onclick="event.stopPropagation();">{{ auto.region.name }}</a>
                     </span>
-                    {% if user.is_authenticated %}
-                        <form method="post" action="{% url 'toggle_favorite' auto.pk %}" style="display:inline;">
-                            {% csrf_token %}
-                            {% if auto.id in favorite_ids %}
-                                <button class="fav-btn" type="submit">Удалить из избранного</button>
-                            {% else %}
-                                <button class="fav-btn" type="submit">★ В избранное</button>
-                            {% endif %}
-                        </form>
-                    {% endif %}
                 </div>
             </a>
+            {% if user.is_authenticated %}
+            <form method="post" action="{% url 'toggle_favorite' auto.pk %}" style="margin: 0.5rem 1.5rem 1rem 1.5rem;">
+                {% csrf_token %}
+                {% if auto.id in favorite_ids %}
+                    <button class="fav-btn" type="submit">Удалить из избранного</button>
+                {% else %}
+                    <button class="fav-btn" type="submit">★ В избранное</button>
+                {% endif %}
+            </form>
+            {% endif %}
         </div>
         {% endfor %}
     </div>
@@ -86,19 +101,99 @@
         <h2><a href="{% url 'news_list' %}?category=Советы">Советы по выбору авто</a></h2>
         <a href="{% url 'news_list' %}?category=Советы" class="view-all-link">Смотреть все советы</a>
     </div>
-    <ol class="widget-list">
+    <div class="widget-list news-widget-list">
         {% for news in advice_news %}
-        <li class="widget-item">
-            <div class="widget-card">
+        <div class="news-widget-item">
+            {# Чтобы изменить миниатюру, укажите main_photo у новости в админке или замените путь ниже #}
+            {% if news.main_photo %}
+                <img src="{{ news.main_photo.url }}" alt="Фото новости" class="news-widget-thumb">
+            {% else %}
+                <img src="{% static 'images/news_default.jpg' %}" alt="Нет изображения" class="news-widget-thumb">
+            {% endif %}
+            <div>
                 <a href="{% url 'news_detail' news.id %}" class="widget-title">{{ news.title }}</a>
                 <div class="widget-info">
                     <span class="widget-date">{{ news.created_at|date:"d.m.Y" }}</span>
                 </div>
             </div>
-        </li>
+        </div>
         {% endfor %}
-    </ol>
+    </div>
 </div>
+
+<style>
+.news-widget-list {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+}
+.news-widget-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 0.7rem 1.2rem;
+    min-width: 260px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    flex: 1 1 320px;
+}
+.news-widget-thumb {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #e5e7eb;
+}
+.premium-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #e67e22;
+    letter-spacing: 2px;
+    gap: 0.5em;
+}
+.premium-label .premium-icon {
+    font-size: 1.3em;
+}
+.premium-label .premium-text {
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+.premium-bottom {
+    margin-top: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+.premium-overlay {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.55);
+    color: #ffd700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: bold;
+    gap: 0.5em;
+    padding: 0.3em 0;
+    border-radius: 0 0 12px 12px;
+    z-index: 2;
+}
+.premium-overlay .premium-icon {
+    font-size: 1.3em;
+}
+.premium-overlay .premium-text {
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #fff;
+}
+.card-img { width: 100%; height: 180px; object-fit: cover; border-radius: 12px 12px 0 0; }
+</style>
 
 <div>
     <!-- шаблонные теги -->
@@ -111,30 +206,37 @@
     <div class="grid-4-cols">
         {% get_recent_autos 4 as recent_autos %}
         {% for auto in recent_autos %}
-        <div class="card">
-            <a href="{{ auto.get_absolute_url }}">
+        <a href="{{ auto.get_absolute_url }}" class="card" style="text-decoration:none;color:inherit;">
+            <div style="position:relative;">
                 {% if auto.auto_photos.first %}
                     <img src="{{ auto.auto_photos.first.photo.url }}" alt="Фото {{ auto.brand.name }}" class="card-img">
                 {% else %}
                     <img src="{% static 'images/no_image_available.png' %}" alt="Нет изображения" class="card-img">
                 {% endif %}
-                <div class="card-body">
-                    <h4 class="card-title">{{ auto.brand.name }} {{ auto.model }}</h4>
-                    <p class="card-text">Год выпуска: {{ auto.year }}</p>
-                    <p class="card-price">{{ auto.price|floatformat:0 }} ₽</p>
-                    {% if user.is_authenticated %}
-                        <form method="post" action="{% url 'toggle_favorite' auto.pk %}" style="display:inline;">
-                            {% csrf_token %}
-                            {% if auto.id in favorite_ids %}
-                                <button class="fav-btn" type="submit">Удалить из избранного</button>
-                            {% else %}
-                                <button class="fav-btn" type="submit">★ В избранное</button>
-                            {% endif %}
-                        </form>
-                    {% endif %}
+                {% if auto.is_premium %}
+                <div class="premium-overlay">
+                    <span class="premium-icon">🔥</span>
+                    <span class="premium-text"><b>ПРЕМИУМ</b></span>
+                    <span class="premium-icon">🔥</span>
                 </div>
-            </a>
-        </div>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <h4 class="card-title">{{ auto.brand.name }} {{ auto.model }}</h4>
+                <p class="card-text">Год выпуска: {{ auto.year }}</p>
+                <p class="card-price">{{ auto.price|floatformat:0 }} ₽</p>
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'toggle_favorite' auto.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        {% if auto.id in favorite_ids %}
+                            <button class="fav-btn" type="submit">Удалить из избранного</button>
+                        {% else %}
+                            <button class="fav-btn" type="submit">★ В избранное</button>
+                        {% endif %}
+                    </form>
+                {% endif %}
+            </div>
+        </a>
         {% empty %}
         <p>Нет недавно добавленных автомобилей.</p>
         {% endfor %}
@@ -145,30 +247,37 @@
     <h2 class="section-title">Подобрали специально для вас</h2>
     <div class="grid-4-cols">
         {% for auto in recommended_autos_list %}
-        <div class="card">
-            <a href="{{ auto.get_absolute_url }}">
+        <a href="{{ auto.get_absolute_url }}" class="card" style="text-decoration:none;color:inherit;">
+            <div style="position:relative;">
                 {% if auto.auto_photos.first %}
                     <img src="{{ auto.auto_photos.first.photo.url }}" alt="Фото {{ auto.brand.name }}" class="card-img">
                 {% else %}
                     <img src="{% static 'images/no_image_available.png' %}" alt="Нет изображения" class="card-img">
                 {% endif %}
-                <div class="card-body">
-                    <h3 class="card-title">{{ auto.brand.name }} {{ auto.model }}</h3>
-                    <p class="card-text">Год выпуска: {{ auto.year }}</p>
-                    <p class="card-price">{{ auto.price|floatformat:0 }} ₽</p>
-                    {% if user.is_authenticated %}
-                        <form method="post" action="{% url 'toggle_favorite' auto.pk %}" style="display:inline;">
-                            {% csrf_token %}
-                            {% if auto.id in favorite_ids %}
-                                <button class="fav-btn" type="submit">Удалить из избранного</button>
-                            {% else %}
-                                <button class="fav-btn" type="submit">★ В избранное</button>
-                            {% endif %}
-                        </form>
-                    {% endif %}
+                {% if auto.is_premium %}
+                <div class="premium-overlay">
+                    <span class="premium-icon">🔥</span>
+                    <span class="premium-text"><b>ПРЕМИУМ</b></span>
+                    <span class="premium-icon">🔥</span>
                 </div>
-            </a>
-        </div>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <h3 class="card-title">{{ auto.brand.name }} {{ auto.model }}</h3>
+                <p class="card-text">Год выпуска: {{ auto.year }}</p>
+                <p class="card-price">{{ auto.price|floatformat:0 }} ₽</p>
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'toggle_favorite' auto.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        {% if auto.id in favorite_ids %}
+                            <button class="fav-btn" type="submit">Удалить из избранного</button>
+                        {% else %}
+                            <button class="fav-btn" type="submit">★ В избранное</button>
+                        {% endif %}
+                    </form>
+                {% endif %}
+            </div>
+        </a>
         {% empty %}
         <p>Нет рекомендованных автомобилей.</p>
         {% endfor %}
@@ -194,13 +303,27 @@
     <div class="grid-4-cols">
         {% not_available_autos 4 as autos %}
         {% for auto in autos %}
-        <div class="card">
+        <a href="{{ auto.get_absolute_url }}" class="card" style="text-decoration:none;color:inherit;">
+            <div style="position:relative;">
+                {% if auto.auto_photos.first %}
+                    <img src="{{ auto.auto_photos.first.photo.url }}" alt="Фото {{ auto.brand.name }}" class="card-img">
+                {% else %}
+                    <img src="{% static 'images/no_image_available.png' %}" alt="Нет изображения" class="card-img">
+                {% endif %}
+                {% if auto.is_premium %}
+                <div class="premium-overlay">
+                    <span class="premium-icon">🔥</span>
+                    <span class="premium-text"><b>ПРЕМИУМ</b></span>
+                    <span class="premium-icon">🔥</span>
+                </div>
+                {% endif %}
+            </div>
             <div class="card-body">
                 <h3 class="card-title">{{ auto.brand.name }} {{ auto.model }}</h3>
                 <p class="card-text">Год выпуска: {{ auto.year }}</p>
                 <p class="card-text" style="color: var(--secondary);">Продано</p>
             </div>
-        </div>
+        </a>
         {% endfor %}
     </div>
 </div>

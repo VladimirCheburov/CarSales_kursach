@@ -3,25 +3,63 @@
 {% block title %}Новости{% endblock %}
 
 {% block content %}
-<h1>Новости</h1>
-
+<style>
+    .news-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+        gap: 2rem;
+        margin: 2rem 0;
+    }
+    .news-item {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        transition: box-shadow 0.2s;
+        position: relative;
+    }
+    .news-item:hover {
+        box-shadow: 0 8px 32px rgba(37,99,235,0.12);
+    }
+    .news-item img {
+        width: 100%;
+        max-height: 220px;
+        object-fit: cover;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+    .news-item h2 {
+        font-size: 1.3rem;
+        margin-bottom: 0.7rem;
+        color: var(--primary);
+    }
+    .news-item p {
+        color: #444;
+        margin-bottom: 0.5rem;
+    }
+    .news-item small {
+        color: #888;
+    }
+</style>
+<h1 style="text-align:center; margin-bottom:2rem;">Новости</h1>
 <div class="news-list">
     {% if news %}
         {% for new in news %}
         <div class="news-item">
             {% if new.main_photo %}
                 <img src="{{ new.main_photo.url }}" alt="Фото новости">
+            {% elif new.new_photos.all %}
+                {% for photo in new.new_photos.all|slice:':1' %}
+                    <img src="{{ photo.image.url }}" alt="{{ photo.description }}">
+                {% endfor %}
             {% endif %}
             <h2>{{ new.title }}</h2>
             <p>{{ new.content|truncatewords:30 }}</p>
             <p><small>Опубликовано: {{ new.created_at|date:"d.m.Y H:i" }}</small></p>
-            {% if new.new_photos.all %}
-                <div>
-                    {% for photo in new.new_photos.all %}
-                        <img src="{{ photo.image.url }}" alt="{{ photo.description }}">
-                    {% endfor %}
-                </div>
-            {% endif %}
+            <a href="{% url 'news_detail' new.id %}" class="btn btn-outline-primary" style="margin-top:auto;">Читать полностью</a>
         </div>
         {% endfor %}
     {% else %}

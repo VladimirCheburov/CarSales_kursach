@@ -5,6 +5,7 @@ from django.utils.timezone import now
 from datetime import timedelta 
 from django.urls import reverse
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 
 class Profile(models.Model):
     # Связь с моделью User
@@ -54,6 +55,15 @@ class GoogleOAuthProfile(models.Model):
     
 class Brand(models.Model):
     name = models.CharField(max_length=255, unique=True)
+
+    def clean(self):
+        import re
+        if '.' in self.name:
+            raise ValidationError("Название бренда не должно содержать лишних символов.")
+        if not re.match(r'^[a-zA-Z\s]+$', self.name):
+            raise ValidationError("Название бренда должно быть только на латинице.")
+        if len(self.name) < 2:
+            raise ValidationError("Название бренда должно быть не менее двух символов.")
 
     class Meta:
         verbose_name_plural = "Автомобильные марки"
@@ -160,6 +170,12 @@ class Auto(TimeStamped):
         """
         return reverse('auto_detail', kwargs={'pk': self.pk})
 
+    def is_premium(self):
+        return (
+            (self.brand.name.lower() in ["porsche", "lexus"]) and
+            self.mileage is not None and self.mileage < 100000 and
+            self.region.name.lower() == "москва"
+        )
 
 class Photo(models.Model):
     url = models.URLField(max_length=700)

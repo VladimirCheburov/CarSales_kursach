@@ -139,11 +139,15 @@ def auto_detail(request, pk):
         except Profile.DoesNotExist:
             user_profile = None
 
+    sell_statuses = SellStatus.objects.all()
+    status_updated = request.GET.get('status_updated') == '1'
     return render(request, 'auto_detail.html', {
         'auto': auto,
         'photos': photos,
         'favorite_ids': favorite_ids,
-        'user_profile': user_profile
+        'user_profile': user_profile,
+        'sell_statuses': sell_statuses,
+        'status_updated': status_updated,
     })
 
 def auto_create(request):
@@ -349,25 +353,30 @@ class AutoViewSet(viewsets.ModelViewSet):
     def update_sell_status(self, request, pk=None):
         """
         Обновление статуса продажи конкретного автомобиля.
+        Только владелец или админ может менять статус.
         """
+        from django.shortcuts import redirect
         try:
             auto = self.get_object()
+            user = request.user
+            if not (user.is_authenticated and (user.is_staff or user.is_superuser or (auto.profile and auto.profile.user == user))):
+                return Response({"error": "Доступ запрещён. Только владелец или администратор может менять статус."}, status=status.HTTP_403_FORBIDDEN)
+
             new_status_id = request.data.get('sell_status_id')
-            
             if not new_status_id:
                 return Response({"error": "Необходимо указать sell_status_id"}, status=status.HTTP_400_BAD_REQUEST)
-            
             try:
                 new_status = SellStatus.objects.get(id=new_status_id)
             except SellStatus.DoesNotExist:
                 return Response({"error": "Указанный статус продажи не найден"}, status=status.HTTP_400_BAD_REQUEST)
-            
             auto.sell_status = new_status
             auto.save()
-            
+            # Если админ — редирект на detail с флагом
+            if user.is_staff or user.is_superuser:
+                from django.urls import reverse
+                return redirect(f'{reverse("auto_detail", kwargs={"pk": auto.pk})}?status_updated=1')
             serializer = self.get_serializer(auto)
             return Response(serializer.data, status=status.HTTP_200_OK)
-            
         except Exception as e:
             return Response({"error": f"Ошибка сервера: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         

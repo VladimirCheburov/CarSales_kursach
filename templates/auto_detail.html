@@ -11,11 +11,14 @@
     }
 
     .adaptive-image {
-        height: var(--image-height);
+        height: 400px;
         min-height: 300px;
-        max-height: 700px;
-        object-fit: cover;
+        max-height: 400px;
+        object-fit: contain;
         border-radius: 15px;
+        width: 100%;
+        cursor: pointer;
+        background: #f8fafc;
     }
 
     .detail-card {
@@ -66,6 +69,21 @@
         border-radius: 8px;
         font-size: 1.5rem;
     }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0; top: 0; width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.8);
+        align-items: center; justify-content: center;
+    }
+
+    .modal.active { display: flex; }
+
+    .modal img { max-width: 90vw; max-height: 90vh; border-radius: 12px; }
+
+    .modal-close { position: absolute; top: 30px; right: 40px; color: #fff; font-size: 2.5rem; cursor: pointer; }
 </style>
 
 <main class="container-fluid px-lg-5 mt-4">
@@ -194,6 +212,25 @@
                         {% endfor %}
                     </ul>
                 </div>
+                {% if user.is_staff or user.is_superuser %}
+                <div style="margin-top: 2rem;">
+                    <form method="post" action="/api/autos/{{ auto.id }}/update-status/" style="display: flex; gap: 1rem; align-items: center;">
+                        {% csrf_token %}
+                        <label for="sell_status_id" style="margin-bottom: 0;">Сменить статус:</label>
+                        <select name="sell_status_id" id="sell_status_id" class="form-control" style="width: auto;">
+                            {% for status in sell_statuses %}
+                                <option value="{{ status.id }}" {% if auto.sell_status.id == status.id %}selected{% endif %}>{{ status.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-outline-primary">Обновить</button>
+                    </form>
+                    {% if status_updated %}
+                    <div style="margin-top:1.5rem;">
+                        <a href="/" class="btn btn-success">Вернуться на главную</a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -209,5 +246,26 @@
 
     window.addEventListener('resize', adjustImageHeight);
     adjustImageHeight();
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.adaptive-image').forEach(function(img) {
+            img.addEventListener('click', function() {
+                var modal = document.getElementById('img-modal');
+                var modalImg = document.getElementById('modal-img');
+                modalImg.src = img.src;
+                modal.classList.add('active');
+            });
+        });
+        var modal = document.getElementById('img-modal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal || e.target.classList.contains('modal-close')) {
+                    modal.classList.remove('active');
+                }
+            });
+        }
+    });
 </script>
+
+<div id="img-modal" class="modal"><span class="modal-close">&times;</span><img id="modal-img" src="" alt="Фото"></div>
 {% endblock %}
