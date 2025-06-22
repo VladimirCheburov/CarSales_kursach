@@ -99,6 +99,12 @@ class AutoForm(forms.ModelForm):
             'sell_status': 'Статус продажи',
         }
 
+    def clean_year(self):
+        year = self.cleaned_data.get('year')
+        if year and year > datetime.now().year:
+            raise forms.ValidationError("Год выпуска автомобиля не может быть в будущем.")
+        return year
+
 class AutoPhotoForm(forms.ModelForm):
     class Meta:
         model = Photo

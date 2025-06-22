@@ -111,7 +111,7 @@ def index(request):
     return render(request, 'index.html', {
         'autos_with_photos': autos_with_photos,
         'autos_page': autos_page,
-        'autos': autos,
+        'autos': autos, 
         'latest_news': latest_news,
         'popular_autos': popular_autos,
         'advice_news': advice_news,
@@ -161,18 +161,45 @@ def auto_create(request):
         return HttpResponseNotAllowed(['POST'])
 
 def search_autos(request):
-    query = request.GET.get('q')  # получаем поисковый запрос из URL
-    results = []
+    query = request.GET.get('q')
+    brand_id = request.GET.get('brand')
+    region_id = request.GET.get('region')
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
+    year = request.GET.get('year')
+
+    results = Auto.objects.available()
 
     if query:
-        # выполняем поиск по модели, бренду и описанию автомобиля
-        results = Auto.objects.filter(
+        results = results.filter(
             Q(brand__name__icontains=query) |
             Q(model__icontains=query) |
             Q(description__icontains=query)
         )
+    
+    if brand_id:
+        results = results.filter(brand_id=brand_id)
+    
+    if region_id:
+        results = results.filter(region_id=region_id)
+        
+    if min_price:
+        results = results.filter(price__gte=min_price)
+        
+    if max_price:
+        results = results.filter(price__lte=max_price)
+        
+    if year:
+        results = results.filter(year__gte=year)
 
-    return render(request, 'search_results.html', {'results': results, 'query': query})
+    brands = Brand.objects.all()
+    regions = Region.objects.all()
+
+    return render(request, 'cars/search.html', {
+        'results': results,
+        'brands': brands,
+        'regions': regions,
+    })
 
 def auto_delete(request, pk):
     if request.method == "DELETE":
