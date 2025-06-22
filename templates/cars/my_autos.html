@@ -37,16 +37,6 @@
                 </div>
             </div>
         </a>
-        {% if user.is_authenticated %}
-        <form method="post" action="{% url 'toggle_favorite' auto.pk %}" style="margin-top: 1rem;">
-            {% csrf_token %}
-            {% if auto.id in favorite_ids %}
-                <button class="fav-btn" type="submit">Удалить из избранного</button>
-            {% else %}
-                <button class="fav-btn" type="submit">★ В избранное</button>
-            {% endif %}
-        </form>
-        {% endif %}
         {% if user.is_authenticated and auto.profile and user_profile and auto.profile.id == user_profile.id %}
         <div class="auto-actions">
             <a href="{% url 'edit_auto' auto.pk %}" class="btn edit-btn">Редактировать</a>
