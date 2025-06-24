@@ -12,14 +12,15 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import ListAPIView
 from django.http import HttpResponse
-from cars.models import Auto, AutoPhoto, Brand, BodyType, EngineType, Color, Region, SellStatus, Profile
+from cars.models import Auto, AutoPhoto, Brand, BodyType, EngineType, Color, Region, SellStatus, Profile, Review
 from cars.serializers import AutoSerializer, BrandSerializer, ProfileSerializer
 from news.models import New
 #для форм
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.http import HttpResponseRedirect
 from .forms import ContactForm
-from .forms import AutoForm, AutoPhotoForm
+from .forms import AutoForm, AutoPhotoForm, ReviewForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from cars.models import Favorite
@@ -120,11 +121,35 @@ def index(request):
     })
 
 def auto_detail(request, pk):
-
     auto = get_object_or_404(Auto, pk=pk)
+    reviews = auto.reviews.all()
+    review_form = ReviewForm()
 
-    # Увеличиваем счетчик просмотров
-    auto.views = auto.views + 1
+    if request.method == 'POST':
+        if not request.user.is_authenticated:
+            messages.error(request, "Вы должны быть авторизованы, чтобы оставить отзыв.")
+            # Redirect to login page, then back to the auto detail page
+            return redirect(f"{reverse('account_login')}?next={request.path}")
+
+        if not auto.sell_status or auto.sell_status.name != 'Продан':
+            messages.error(request, "Вы не можете оставить отзыв на автомобиль, который не продан.")
+            return redirect('auto_detail', pk=pk)
+
+        review_form = ReviewForm(request.POST)
+        if review_form.is_valid():
+            if Review.objects.filter(auto=auto, user=request.user).exists():
+                messages.error(request, "Вы уже оставляли отзыв на этот автомобиль.")
+            else:
+                review = review_form.save(commit=False)
+                review.auto = auto
+                review.user = request.user
+                review.save()
+                messages.success(request, "Ваш отзыв был успешно добавлен.")
+                return redirect('auto_detail', pk=pk)
+        else:
+            messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
+
+    auto.views += 1
     auto.save(update_fields=['views'])
 
     photos = auto.auto_photos.all()
@@ -134,13 +159,13 @@ def auto_detail(request, pk):
     if request.user.is_authenticated:
         favorite_ids = list(Auto.objects.filter(favorite__user=request.user).values_list('id', flat=True))
         try:
-            from cars.models import Profile
             user_profile = Profile.objects.get(user=request.user)
         except Profile.DoesNotExist:
             user_profile = None
 
     sell_statuses = SellStatus.objects.all()
     status_updated = request.GET.get('status_updated') == '1'
+
     return render(request, 'auto_detail.html', {
         'auto': auto,
         'photos': photos,
@@ -148,6 +173,8 @@ def auto_detail(request, pk):
         'user_profile': user_profile,
         'sell_statuses': sell_statuses,
         'status_updated': status_updated,
+        'reviews': reviews,
+        'review_form': review_form,
     })
 
 def auto_create(request):
@@ -625,9 +652,13 @@ def toggle_favorite(request, pk):
 
 @login_required
 def my_autos(request):
-    try:
-        profile = Profile.objects.get(user=request.user)
-    except Profile.DoesNotExist:
-        profile = None
-    autos = Auto.objects.filter(profile=profile) if profile else []
+    user_profile = get_object_or_404(Profile, user=request.user)
+    autos = Auto.objects.filter(profile=user_profile)
     return render(request, 'cars/my_autos.html', {'autos': autos})
+
+def reviews_list(request):
+    """
+    Отображает список всех отзывов.
+    """
+    reviews = Review.objects.select_related('auto', 'user', 'auto__brand').prefetch_related('auto__auto_photos__photo').order_by('-created_at')
+    return render(request, 'reviews.html', {'reviews': reviews})

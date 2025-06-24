@@ -17,7 +17,7 @@ from news.views import category_summary
 from cars.views import test_view
 from cars.views import favorite_autos
 from cars.views import autos_by_region, toggle_favorite
-from cars.views import my_autos
+from cars.views import my_autos, reviews_list
 router = DefaultRouter()
 router.register(r'autos', AutoViewSet, basename='autos')
 router.register(r'brands', BrandViewSet, basename='brands')
@@ -31,6 +31,7 @@ urlpatterns = [
     path('autos/add/', add_auto, name='add_auto'),
     path('autos/<int:pk>/edit/', edit_auto, name='edit_auto'),
     path('autos/<int:pk>/delete/', delete_auto, name='delete_auto'),
+    path('reviews/', reviews_list, name='reviews_list'),
 
     # path('', contact_view, name='contact'),
     path('test-template/', test_view, name='test_template'),

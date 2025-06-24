@@ -1,5 +1,5 @@
 from django import forms
-from .models import ContactMessage
+from .models import ContactMessage, Review
 import re
 from datetime import datetime
 from cars.models import Auto, AutoPhoto, Photo
@@ -115,3 +115,16 @@ class AutoPhotoForm(forms.ModelForm):
     class Meta:
         model = Photo
         fields = ['url', 'description']
+
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ['rating', 'text']
+        widgets = {
+            'text': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Ваш отзыв', 'class': 'form-control'}),
+            'rating': forms.Select(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'rating': 'Оценка',
+            'text': 'Текст отзыва',
+        }

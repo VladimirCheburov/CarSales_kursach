@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Отзывы об автомобилях{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<style>
+.reviews-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+.reviews-list {
+    display: grid;
+    gap: 1.5rem;
+}
+.review-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.review-card-link:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+}
+.review-card {
+    display: flex;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+    overflow: hidden;
+}
+.review-card-img {
+    flex-shrink: 0;
+    width: 200px;
+    height: 150px;
+}
+.review-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.review-card-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+.review-card-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+.review-card-price {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2563eb;
+    margin-bottom: 0.75rem;
+}
+.review-rating .bi-star-fill {
+    color: #f59e0b;
+}
+.review-card-text {
+    margin-top: 1rem;
+    color: #555;
+}
+</style>
+
+<div class="reviews-container">
+    <h1 class="mb-4">Отзывы об автомобилях</h1>
+    <div class="reviews-list">
+        {% for review in reviews %}
+            <a href="{% url 'auto_detail' pk=review.auto.pk %}" class="review-card-link">
+                <div class="review-card">
+                    <div class="review-card-img">
+                        {% with first_photo=review.auto.auto_photos.first %}
+                            {% if first_photo %}
+                                <img src="{{ first_photo.photo.url }}" alt="{{ review.auto }}">
+                            {% else %}
+                                <img src="{% static 'images/no_image_available.png' %}" alt="Нет фото">
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                    <div class="review-card-body">
+                        <h5 class="review-card-title">{{ review.auto.brand.name }} {{ review.auto.model }}</h5>
+                        <p class="review-card-price">{{ review.auto.price|floatformat:0 }} ₽</p>
+                        <div class="review-rating">
+                            {% for i in "12345" %}
+                                <i class="bi bi-star-fill"{% if i|add:0 > review.rating %} style="color: #ccc;"{% endif %}></i>
+                            {% endfor %}
+                        </div>
+                        <p class="review-card-text">"{{ review.text|truncatewords:25 }}"</p>
+                        <small class="text-muted mt-auto">Отзыв от {{ review.user.username }}</small>
+                    </div>
+                </div>
+            </a>
+        {% empty %}
+            <p>На данный момент отзывов нет.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

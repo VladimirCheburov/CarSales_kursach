@@ -301,6 +301,43 @@
 .modal.active { display: flex; }
 .modal img { max-width: 92vw; max-height: 92vh; border-radius: 14px; box-shadow: 0 4px 32px rgba(0,0,0,0.25); }
 .modal-close { position: absolute; top: 30px; right: 40px; color: #fff; font-size: 2.5rem; cursor: pointer; z-index: 2; }
+
+.reviews-section {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.review {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.review-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.review-author {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.review-rating .star {
+    color: #f59e0b;
+}
+
+.review-form-container {
+    background: #f3f4f6;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-top: 2rem;
+}
 </style>
 
 <div class="auto-detail-card">
@@ -455,4 +492,81 @@ document.getElementById('all-chars-btn').addEventListener('click', function() {
     block.classList.toggle('open');
 });
 </script>
+
+{% if status_updated %}
+    <div class="alert alert-success" role="alert">
+        Статус автомобиля успешно обновлен!
+    </div>
+{% endif %}
+
+<!-- Reviews Section -->
+<div class="reviews-section">
+    <h3 class="auto-detail-title" style="font-size: 1.8rem; margin-bottom: 1.5rem;">Отзывы</h3>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}" role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% for review in reviews %}
+        <div class="review">
+            <div class="review-header">
+                <span class="review-author">{{ review.user.username }}</span>
+                <span class="review-rating">
+                    {% for i in "12345" %}
+                        <i class="bi bi-star-fill star"{% if i|add:0 > review.rating %}style="color: #ccc;"{% endif %}></i>
+                    {% endfor %}
+                </span>
+            </div>
+            <p>{{ review.text }}</p>
+            <small class="text-muted">{{ review.created_at|date:"d.m.Y H:i" }}</small>
+        </div>
+    {% empty %}
+        <p>Отзывов пока нет. Будьте первым!</p>
+    {% endfor %}
+
+    {% if user.is_authenticated and auto.sell_status and auto.sell_status.name == 'Продан' %}
+    <div class="review-form-container">
+        <h4>Оставить отзыв</h4>
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="{{ review_form.rating.id_for_label }}" class="form-label">{{ review_form.rating.label }}</label>
+                {{ review_form.rating }}
+            </div>
+            <div class="mb-3">
+                <label for="{{ review_form.text.id_for_label }}" class="form-label">{{ review_form.text.label }}</label>
+                {{ review_form.text }}
+            </div>
+            <button type="submit" class="btn btn-primary">Отправить отзыв</button>
+        </form>
+    </div>
+    {% elif not user.is_authenticated and auto.sell_status and auto.sell_status.name == 'Продан' %}
+        <p><a href="{% url 'account_login' %}?next={{ request.path }}">Войдите</a>, чтобы оставить отзыв.</p>
+    {% endif %}
+</div>
+<!-- End Reviews Section -->
+
+<div class="auto-detail-similar">
+    <h3 class="auto-detail-title" style="font-size: 1.8rem; margin-bottom: 1.5rem;">Похожие автомобили</h3>
+    <div class="auto-detail-similar-list">
+        {% for similar in auto.brand.auto_set.all|slice:':6' %}
+            {% if similar.id != auto.id %}
+            <a href="{{ similar.get_absolute_url }}" class="auto-detail-similar-card">
+                {% if similar.auto_photos.first %}
+                <img src="{{ similar.auto_photos.first.photo.url }}" alt="{{ similar.brand.name }} {{ similar.model }}">
+                {% else %}
+                <img src="{% static 'images/no_image_available.png' %}" alt="Нет изображения">
+                {% endif %}
+                <div class="card-title">{{ similar.brand.name }} {{ similar.model }}</div>
+                <div class="card-price">{{ similar.price|floatformat:0 }} ₽</div>
+                <div style="font-size:0.95em;color:#888;">{{ similar.year }}</div>
+            </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}
