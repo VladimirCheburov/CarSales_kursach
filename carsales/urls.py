@@ -18,10 +18,21 @@ from cars.views import test_view
 from cars.views import favorite_autos
 from cars.views import autos_by_region, toggle_favorite
 from cars.views import my_autos, reviews_list
+from cars.api import (
+    ReviewViewSet, FavoriteViewSet, SellStatusViewSet, RegionViewSet,
+    BodyTypeViewSet, EngineTypeViewSet, ColorViewSet
+)
 router = DefaultRouter()
 router.register(r'autos', AutoViewSet, basename='autos')
 router.register(r'brands', BrandViewSet, basename='brands')
 router.register(r'profiles', ProfileViewSet, basename='profiles')
+router.register(r'reviews', ReviewViewSet, basename='reviews')
+router.register(r'favorites', FavoriteViewSet, basename='favorites')
+router.register(r'sellstatuses', SellStatusViewSet, basename='sellstatuses')
+router.register(r'regions', RegionViewSet, basename='regions')
+router.register(r'bodytypes', BodyTypeViewSet, basename='bodytypes')
+router.register(r'enginetypes', EngineTypeViewSet, basename='enginetypes')
+router.register(r'colors', ColorViewSet, basename='colors')
 from cars.views import index
 from cars.views import auto_detail
 from cars.views import add_auto, edit_auto, delete_auto, auto_list
