@@ -1,0 +1,136 @@
+ER-диаграмма для проекта CarSales
+
+СУЩНОСТИ И ИХ ПОЛЯ:
+
+1. User (Пользователь)
+   - id (PK)
+   - username
+   - email
+   - first_name
+   - last_name
+   - is_staff
+   - is_active
+   - date_joined
+
+2. Profile (Профиль пользователя)
+   - id (PK)
+   - user_id (FK -> User)
+   - phone_num
+   - groups (M2M -> Group)
+   - user_permissions (M2M -> Permission)
+
+3. GoogleOAuthProfile (Google OAuth профиль)
+   - id (PK)
+   - user_id (FK -> Profile)
+   - google_user_id
+   - access_token
+   - refresh_token
+   - token_expiry
+   - created_at
+   - updated_at
+
+4. Brand (Марка автомобиля)
+   - id (PK)
+   - name
+
+5. BodyType (Тип кузова)
+   - id (PK)
+   - name
+
+6. EngineType (Тип двигателя)
+   - id (PK)
+   - name
+
+7. Color (Цвет)
+   - id (PK)
+   - name
+
+8. SellStatus (Статус продажи)
+   - id (PK)
+   - name
+
+9. Region (Регион)
+   - id (PK)
+   - name
+
+10. Auto (Автомобиль)
+    - id (PK)
+    - brand_id (FK -> Brand)
+    - description
+    - model
+    - year
+    - mileage
+    - price
+    - body_type_id (FK -> BodyType)
+    - engine_type_id (FK -> EngineType)
+    - color_id (FK -> Color)
+    - region_id (FK -> Region)
+    - sell_status_id (FK -> SellStatus)
+    - views
+    - profile_id (FK -> Profile)
+    - created_at
+    - updated_at
+
+11. Photo (Фотография)
+    - id (PK)
+    - url
+    - description
+
+12. AutoPhoto (Связь автомобиль-фото)
+    - id (PK)
+    - auto_id (FK -> Auto)
+    - photo_id (FK -> Photo)
+
+13. Favorite (Избранное)
+    - id (PK)
+    - user_id (FK -> User)
+    - auto_id (FK -> Auto)
+    - created_at
+
+14. Review (Отзыв)
+    - id (PK)
+    - auto_id (FK -> Auto)
+    - user_id (FK -> User)
+    - rating
+    - text
+    - created_at
+    - updated_at
+
+15. ContactMessage (Контактное сообщение)
+    - id (PK)
+    - name
+    - email
+    - message
+    - attachment
+    - created_at
+
+СВЯЗИ:
+
+1. User (1) -----> (1) Profile
+2. Profile (1) -----> (M) GoogleOAuthProfile
+3. User (1) -----> (M) Auto
+4. User (1) -----> (M) Favorite
+5. User (1) -----> (M) Review
+6. User (1) -----> (M) ContactMessage
+
+7. Brand (1) -----> (M) Auto
+8. BodyType (1) -----> (M) Auto
+9. EngineType (1) -----> (M) Auto
+10. Color (1) -----> (M) Auto
+11. Region (1) -----> (M) Auto
+12. SellStatus (1) -----> (M) Auto
+
+13. Auto (1) -----> (M) AutoPhoto
+14. Photo (1) -----> (M) AutoPhoto
+15. Auto (1) -----> (M) Review
+
+16. Profile (M) -----> (M) Group (через groups)
+17. Profile (M) -----> (M) Permission (через user_permissions)
+
+ОСОБЕННОСТИ:
+- AutoPhoto является промежуточной таблицей для связи M2M между Auto и Photo
+- Favorite имеет уникальное ограничение на пару (user, auto)
+- Review имеет уникальное ограничение на пару (user, auto)
+- Auto наследует от TimeStamped (created_at, updated_at)
+- Auto имеет кастомный менеджер AutoManager с методом available()
+- Auto имеет метод is_premium() для определения премиум-автомобилей 

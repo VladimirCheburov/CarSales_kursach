@@ -451,6 +451,37 @@
         .hero-section .search-input::placeholder {
             color: var(--gray);
         }
+
+        .telegram-banner {
+            background: linear-gradient(90deg, #059669, #10b981);
+            color: white;
+            padding: 0.75rem 2rem;
+            font-size: 0.95rem;
+        }
+
+        .telegram-banner-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.75rem 1.5rem;
+        }
+
+        .telegram-banner code {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            letter-spacing: 0.05em;
+        }
+
+        .telegram-banner .badge {
+            background: rgba(255, 255, 255, 0.25);
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -467,6 +498,9 @@
                 <li><a href="{% url 'auto_list' %}" class="nav-link">Все автомобили</a></li>
                 <li><a href="{% url 'favorite_autos' %}" class="nav-link">Избранное</a></li>
                 <li><a href="{% url 'my_autos' %}" class="nav-link">Мои объявления</a></li>
+                {% if user.is_authenticated %}
+                <li><a href="{% url 'conversations_list' %}" class="nav-link">Переписки</a></li>
+                {% endif %}
                 <li><a href="{% url 'reviews_list' %}" class="nav-link">Отзывы</a></li>
             </ul>
 
@@ -482,6 +516,21 @@
             </div>
         </div>
     </nav>
+
+    {% if user.is_authenticated %}
+    <div class="telegram-banner">
+        <div class="telegram-banner-inner">
+            <strong>📱 Telegram-бот</strong>
+            {% if telegram_is_linked %}
+                <span class="badge">Аккаунт привязан</span>
+            {% else %}
+                <span>Личный код для привязки в боте:</span>
+                <code id="telegram-link-code">{{ telegram_link_token }}</code>
+                <span style="opacity: 0.9;">→ в боте: «Привязать аккаунт» и вставьте код</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 
     {% block hero %}{% endblock %}
 
@@ -524,7 +573,7 @@
         </div>
 
         <div class="copyright">
-            &copy; 2025 AVTO.RU. Все права защищены.
+            &copy; 2025 AVTO.RU. Все права защищены. <br> Made by Cheburov
         </div>
     </footer>
 </body>

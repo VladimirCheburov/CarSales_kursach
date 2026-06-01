@@ -1,3 +1,5 @@
+import secrets
+
 from django.db import models
 from simple_history.models import HistoricalRecords
 from django.contrib.auth.models import AbstractUser
@@ -13,6 +15,12 @@ class Profile(models.Model):
 
     # Дополнительные поля профиля
     phone_num = models.CharField(max_length=20, blank=True, null=True)
+    telegram_chat_id = models.BigIntegerField(
+        blank=True, null=True, unique=True,
+        verbose_name='Telegram chat ID',
+    )
+    telegram_username = models.CharField(max_length=255, blank=True, null=True)
+    telegram_link_token = models.CharField(max_length=32, blank=True, null=True, unique=True)
     groups = models.ManyToManyField(
         'auth.Group',
         related_name='profile_groups',
@@ -26,6 +34,11 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.user.first_name} {self.user.last_name}"
+
+    def regenerate_telegram_link_token(self):
+        self.telegram_link_token = secrets.token_urlsafe(12)
+        self.save(update_fields=['telegram_link_token'])
+        return self.telegram_link_token
 
     class Meta:
         verbose_name_plural = "Пользователи"
@@ -246,4 +259,22 @@ class Review(models.Model):
 
     def __str__(self):
         return f'Review by {self.user.username} for {self.auto}'
+
+class Message(models.Model):
+    """
+    Модель для переписки между покупателем и продавцом по объявлению.
+    """
+    auto = models.ForeignKey('Auto', on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name_plural = 'Сообщения'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'Message from {self.sender.username} to {self.receiver.username} about {self.auto}'
     

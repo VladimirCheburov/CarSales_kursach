@@ -68,6 +68,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'cars.context_processor.contact_form_processor',
+                'cars.context_processor.telegram_link_processor',
             ],
         },
     },
@@ -83,15 +84,31 @@ DATABASES = {
 }
 
 AUTH_PASSWORD_VALIDATORS = [
+    # Проверка, что пароль не слишком похож на имя пользователя, email и т.п.
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'OPTIONS': {
+            # Какие поля пользователя сравнивать с паролем
+            'user_attributes': ('username', 'email', 'first_name', 'last_name'),
+            # Насколько «похожесть» считается слишком высокой (0–1)
+            'max_similarity': 0.7,
+        },
     },
+    # Проверка минимальной длины пароля
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            # Минимальное количество символов в пароле
+            'min_length': 8,
+        },
     },
+    # Проверка на «слишком простой / распространённый» пароль
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        # Обычно без дополнительных опций, но можно подключить свой словарь
+        # 'OPTIONS': {'password_list_path': '/path/to/your_common_passwords.txt'},
     },
+    # Проверка, что пароль не состоит только из цифр
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
@@ -195,4 +212,9 @@ INTERNAL_IPS = [
 
 DEBUG_TOOLBAR_CONFIG = {
     'SHOW_TOOLBAR_CALLBACK': lambda request: DEBUG,
-} 
+}
+
+# Интеграция с Telegram-ботом (вторая ИС)
+INTEGRATION_API_KEY = os.getenv('INTEGRATION_API_KEY', 'dev-integration-key-change-me')
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
+SITE_BASE_URL = os.getenv('SITE_BASE_URL', 'http://127.0.0.1:8000')

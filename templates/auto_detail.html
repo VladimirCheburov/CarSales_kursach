@@ -424,6 +424,15 @@
             {% endif %}
         </form>
         {% endif %}
+        {% if user.is_authenticated and auto.profile and auto.profile.user != user %}
+            <a href="{% url 'conversation_detail' auto_id=auto.pk %}" class="btn btn-success">
+                <i class="bi bi-chat-dots"></i> Написать продавцу
+            </a>
+        {% elif not user.is_authenticated %}
+            <a href="{% url 'account_login' %}?next={{ request.path }}" class="btn btn-success">
+                <i class="bi bi-chat-dots"></i> Написать продавцу
+            </a>
+        {% endif %}
     </div>
     {% if user.is_staff or user.is_superuser %}
     <div class="auto-detail-status-form">

@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import ListAPIView
 from django.http import HttpResponse
-from cars.models import Auto, AutoPhoto, Brand, BodyType, EngineType, Color, Region, SellStatus, Profile, Review
+from cars.models import Auto, AutoPhoto, Brand, BodyType, EngineType, Color, Region, SellStatus, Profile, Review, Message
 from cars.serializers import AutoSerializer, BrandSerializer, ProfileSerializer
 from news.models import New
 #для форм
@@ -662,3 +662,158 @@ def reviews_list(request):
     """
     reviews = Review.objects.select_related('auto', 'user', 'auto__brand').prefetch_related('auto__auto_photos__photo').order_by('-created_at')
     return render(request, 'reviews.html', {'reviews': reviews})
+
+@login_required
+def conversations_list(request):
+    """
+    Отображает список всех переписок пользователя.
+    """
+    # Получаем все объявления, по которым есть переписка с текущим пользователем
+    autos_with_messages = Auto.objects.filter(
+        messages__sender=request.user
+    ).distinct() | Auto.objects.filter(
+        messages__receiver=request.user
+    ).distinct()
+    
+    # Для каждого объявления получаем последнее сообщение
+    conversations = []
+    for auto in autos_with_messages:
+        last_message = Message.objects.filter(
+            auto=auto
+        ).filter(
+            Q(sender=request.user) | Q(receiver=request.user)
+        ).order_by('-created_at').first()
+        
+        if last_message:
+            # Определяем собеседника
+            if last_message.sender == request.user:
+                other_user = last_message.receiver
+            else:
+                other_user = last_message.sender
+            
+            conversations.append({
+                'auto': auto,
+                'last_message': last_message,
+                'other_user': other_user,
+                'unread_count': Message.objects.filter(
+                    auto=auto,
+                    receiver=request.user,
+                    is_read=False
+                ).count()
+            })
+    
+    # Сортируем по дате последнего сообщения
+    conversations.sort(key=lambda x: x['last_message'].created_at, reverse=True)
+    
+    return render(request, 'cars/conversations_list.html', {'conversations': conversations})
+
+@login_required
+def conversation_detail(request, auto_id):
+    """
+    Отображает переписку по конкретному объявлению.
+    """
+    auto = get_object_or_404(Auto, pk=auto_id)
+    
+    # Проверяем, что у объявления есть продавец
+    if not auto.profile or not auto.profile.user:
+        messages.error(request, 'У этого объявления нет продавца.')
+        return redirect('auto_detail', pk=auto_id)
+    
+    # Проверяем доступ: пользователь должен быть либо продавцом, либо покупателем
+    is_seller = auto.profile.user == request.user
+    is_buyer = Message.objects.filter(
+        auto=auto
+    ).filter(
+        Q(sender=request.user) | Q(receiver=request.user)
+    ).exists()
+    
+    # Если пользователь не продавец и не участвовал в переписке, разрешаем доступ (первое сообщение)
+    if not is_seller and not is_buyer:
+        # Покупатель может начать переписку
+        pass
+    
+    # Получаем все сообщения по этому объявлению
+    if is_seller:
+        # Продавец видит все сообщения по объявлению
+        messages_list = Message.objects.filter(auto=auto).order_by('created_at')
+    else:
+        # Покупатель видит только свои сообщения с продавцом
+        messages_list = Message.objects.filter(
+            auto=auto
+        ).filter(
+            Q(sender=request.user) | Q(receiver=request.user)
+        ).order_by('created_at')
+    
+    # Определяем собеседника
+    if is_seller:
+        # Если текущий пользователь - продавец, определяем собеседника из последнего сообщения
+        last_message = messages_list.exclude(sender=request.user).last()
+        if last_message:
+            other_user = last_message.sender
+        else:
+            # Если сообщений от покупателей нет, берем первого покупателя из переписки
+            first_buyer_msg = messages_list.exclude(sender=request.user).first()
+            if first_buyer_msg:
+                other_user = first_buyer_msg.sender
+            else:
+                other_user = None
+    else:
+        # Если текущий пользователь - покупатель, собеседник - продавец
+        other_user = auto.profile.user
+    
+    # Помечаем сообщения как прочитанные
+    Message.objects.filter(
+        auto=auto,
+        receiver=request.user,
+        is_read=False
+    ).update(is_read=True)
+    
+    # Обработка отправки нового сообщения
+    if request.method == 'POST':
+        message_text = request.POST.get('message')
+        if message_text:
+            if other_user:
+                Message.objects.create(
+                    auto=auto,
+                    sender=request.user,
+                    receiver=other_user,
+                    message=message_text
+                )
+                messages.success(request, 'Сообщение отправлено.')
+                return redirect('conversation_detail', auto_id=auto_id)
+            else:
+                messages.error(request, 'Не удалось определить получателя.')
+    
+    return render(request, 'cars/conversation_detail.html', {
+        'auto': auto,
+        'messages_list': messages_list,
+        'other_user': other_user,
+    })
+
+@login_required
+def send_message(request, auto_id):
+    """
+    Отправка сообщения продавцу по объявлению.
+    """
+    auto = get_object_or_404(Auto, pk=auto_id)
+    
+    # Проверяем, что пользователь не является владельцем объявления
+    if auto.profile and auto.profile.user == request.user:
+        messages.error(request, 'Вы не можете написать самому себе.')
+        return redirect('auto_detail', pk=auto_id)
+    
+    if request.method == 'POST':
+        message_text = request.POST.get('message')
+        if message_text and auto.profile:
+            Message.objects.create(
+                auto=auto,
+                sender=request.user,
+                receiver=auto.profile.user,
+                message=message_text
+            )
+            messages.success(request, 'Сообщение отправлено продавцу.')
+            return redirect('conversation_detail', auto_id=auto_id)
+        else:
+            messages.error(request, 'Ошибка при отправке сообщения.')
+    
+    return redirect('auto_detail', pk=auto_id)

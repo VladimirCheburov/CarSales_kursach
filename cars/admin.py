@@ -4,7 +4,7 @@ from import_export.admin import ExportMixin
 from import_export.formats.base_formats import XLS
 from django.utils.timezone import now
 from .models import Auto, AutoPhoto, Profile, Brand, BodyType, EngineType, Color, SellStatus, Region, Photo
-from .models import ContactMessage
+from .models import ContactMessage, Message
 
 # для экспорта данных из Auto с использованием django-import-export
 class AutoResource(resources.ModelResource):
@@ -96,7 +96,22 @@ class ContactMessageAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)  # фильтр по дате создания
     readonly_fields = ('created_at',)  # поля, которые нельзя редактировать
 
-admin.site.register(Profile)
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    """
+    Настройки отображения модели Message в админке.
+    """
+    list_display = ('id', 'auto', 'sender', 'receiver', 'created_at', 'is_read')
+    list_display_links = ('auto',)
+    search_fields = ('auto__brand__name', 'auto__model', 'sender__username', 'receiver__username', 'message')
+    list_filter = ('is_read', 'created_at', 'auto')
+    readonly_fields = ('created_at',)
+    date_hierarchy = 'created_at'
+
+admin.site.register(Profile, type('ProfileAdmin', (admin.ModelAdmin,), {
+    'list_display': ('user', 'phone_num', 'telegram_chat_id', 'telegram_username'),
+    'search_fields': ('user__username', 'telegram_username'),
+}))
 admin.site.register(Brand)
 admin.site.register(BodyType)
 admin.site.register(EngineType)
