@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from .models import Auto, Brand, BodyType, EngineType, Color, Region, SellStatus, Profile
+from .models import Auto, Brand, BodyType, EngineType, Color, Region, SellStatus, Profile, Review, Favorite
 import re
+from datetime import date
 
 
 class BrandSerializer(serializers.ModelSerializer):
@@ -71,3 +72,48 @@ class AutoSerializer(serializers.ModelSerializer):
             'price', 'body_type', 'body_type_id', 'engine_type', 'engine_type_id',
             'color', 'color_id', 'region', 'region_id', 'sell_status', 'sell_status_id'
         ]
+
+    def validate_year(self, value):
+        if value > date.today().year:
+            raise serializers.ValidationError("Год выпуска автомобиля не может быть в будущем.")
+        return value
+
+    def validate_price(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Цена автомобиля должна быть больше нуля.")
+        return value
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = '__all__'
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Favorite
+        fields = '__all__'
+
+class SellStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SellStatus
+        fields = '__all__'
+
+class RegionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Region
+        fields = '__all__'
+
+class BodyTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BodyType
+        fields = '__all__'
+
+class EngineTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EngineType
+        fields = '__all__'
+
+class ColorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Color
+        fields = '__all__'

@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Расширенный поиск автомобилей{% endblock %}
+
+{% block content %}
+<style>
+    .search-page-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+    .search-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    .filter-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+    .form-label {
+        font-weight: 500;
+        color: var(--gray);
+        margin-bottom: 0.5rem;
+    }
+    .form-control {
+        padding: 0.8rem 1rem;
+        font-size: 1rem;
+        border: 1px solid var(--light-gray);
+        border-radius: 8px;
+    }
+    .price-group {
+        display: flex;
+        gap: 1rem;
+    }
+    .btn-submit {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: white;
+        background-color: var(--primary);
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        grid-column: 1 / -1; /* Stretch button across all columns */
+    }
+    .btn-submit:hover {
+        background-color: var(--primary-dark);
+    }
+    .results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+    .premium-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #e67e22;
+        letter-spacing: 2px;
+        gap: 0.5em;
+    }
+    .premium-label .premium-icon {
+        font-size: 1.3em;
+    }
+    .premium-label .premium-text {
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+    .premium-bottom {
+        margin-top: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+    .premium-overlay {
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.55);
+        color: #ffd700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        font-weight: bold;
+        gap: 0.5em;
+        padding: 0.3em 0;
+        border-radius: 0 0 12px 12px;
+        z-index: 2;
+    }
+    .premium-overlay .premium-icon {
+        font-size: 1.3em;
+    }
+    .premium-overlay .premium-text {
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #fff;
+    }
+    .card-img { width: 100%; height: 180px; object-fit: cover; border-radius: 12px 12px 0 0; }
+</style>
+
+<div class="search-page-container">
+    <h1 class="search-title">Найдите автомобиль своей мечты</h1>
+
+    <form method="get" class="filter-form">
+        <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="q" class="form-label">Поиск по ключевому слову</label>
+            <input type="text" name="q" id="q" class="form-control" placeholder="Например, BMW M5 или седан..." value="{{ request.GET.q }}">
+        </div>
+
+        <div class="form-group">
+            <label for="brand" class="form-label">Марка</label>
+            <select name="brand" id="brand" class="form-control">
+                <option value="">Все марки</option>
+                {% for brand in brands %}
+                    <option value="{{ brand.id }}" {% if request.GET.brand == brand.id|stringformat:"s" %}selected{% endif %}>{{ brand.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="region" class="form-label">Регион</label>
+            <select name="region" id="region" class="form-control">
+                <option value="">Все регионы</option>
+                {% for region in regions %}
+                    <option value="{{ region.id }}" {% if request.GET.region == region.id|stringformat:"s" %}selected{% endif %}>{{ region.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Цена, ₽</label>
+            <div class="price-group">
+                <input type="number" name="min_price" class="form-control" placeholder="От" value="{{ request.GET.min_price }}">
+                <input type="number" name="max_price" class="form-control" placeholder="До" value="{{ request.GET.max_price }}">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="year" class="form-label">Год от</label>
+            <input type="number" name="year" class="form-control" placeholder="Например, 2020" value="{{ request.GET.year }}">
+        </div>
+
+        <button type="submit" class="btn-submit">Найти</button>
+    </form>
+
+    <hr style="margin: 2rem 0; border: 1px solid var(--light-gray);">
+
+    <h2 style="margin-bottom: 1.5rem;">Результаты поиска ({{ results.count }})</h2>
+
+    <div class="results-grid">
+        {% for auto in results %}
+            <div class="card" style="display:flex;flex-direction:column;position:relative;">
+                <a href="{{ auto.get_absolute_url }}" style="text-decoration:none;color:inherit;display:block;flex:1;">
+                    <div style="position:relative;">
+                        {% if auto.auto_photos.first %}
+                            <img src="{{ auto.auto_photos.first.photo.url }}" alt="Фото {{ auto.brand.name }}" class="card-img">
+                        {% else %}
+                            <img src="{% static 'images/no_image_available.png' %}" alt="Нет изображения" class="card-img">
+                        {% endif %}
+                        {% if auto.is_premium %}
+                        <div class="premium-overlay">
+                            <span class="premium-icon">🔥</span>
+                            <span class="premium-text"><b>ПРЕМИУМ</b></span>
+                            <span class="premium-icon">🔥</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <h4 class="card-title">{{ auto.brand.name }} {{ auto.model }}</h4>
+                        <p class="card-text">Год выпуска: {{ auto.year }}</p>
+                        <p class="card-price">{{ auto.price|floatformat:0 }} ₽</p>
+                    </div>
+                </a>
+                {% if user.is_authenticated %}
+                <form method="post" action="{% url 'toggle_favorite' auto.pk %}" style="margin: 0.5rem 1.5rem 1rem 1.5rem;">
+                    {% csrf_token %}
+                    {% if auto.id in favorite_ids %}
+                        <button class="fav-btn" type="submit">Удалить из избранного</button>
+                    {% else %}
+                        <button class="fav-btn" type="submit">★ В избранное</button>
+                    {% endif %}
+                </form>
+                {% endif %}
+            </div>
+        {% empty %}
+            <p>По вашему запросу ничего не найдено. Попробуйте изменить параметры фильтрации.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

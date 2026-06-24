@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ news.title }}{% endblock %}
+
+{% block content %}
+<div class="news-detail">
+    <h1>{{ news.title }}</h1>
+    <p><small>Опубликовано: {{ news.created_at|date:"d.m.Y H:i" }}</small></p>
+    <div class="news-content">{{ news.content|linebreaks }}</div>
+    {% if news.photos.all %}
+        <div class="news-photos">
+            {% for photo in news.photos.all %}
+                <img src="{{ photo.image.url }}" alt="{{ photo.description }}" style="max-width: 300px; margin: 10px 0;">
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

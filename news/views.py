@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -56,3 +56,7 @@ def redirect_to_auto(request, pk):
     """
     url = reverse('auto_detail', kwargs={'pk': pk})
     return redirect(url)
+
+def news_detail(request, pk):
+    news = get_object_or_404(New, pk=pk)
+    return render(request, 'news/news_detail.html', {'news': news})

@@ -1,3 +1,5 @@
+import secrets
+
 from django.db import models
 from simple_history.models import HistoricalRecords
 from django.contrib.auth.models import AbstractUser
@@ -5,6 +7,7 @@ from django.utils.timezone import now
 from datetime import timedelta 
 from django.urls import reverse
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 
 class Profile(models.Model):
     # Связь с моделью User
@@ -12,6 +15,12 @@ class Profile(models.Model):
 
     # Дополнительные поля профиля
     phone_num = models.CharField(max_length=20, blank=True, null=True)
+    telegram_chat_id = models.BigIntegerField(
+        blank=True, null=True, unique=True,
+        verbose_name='Telegram chat ID',
+    )
+    telegram_username = models.CharField(max_length=255, blank=True, null=True)
+    telegram_link_token = models.CharField(max_length=32, blank=True, null=True, unique=True)
     groups = models.ManyToManyField(
         'auth.Group',
         related_name='profile_groups',
@@ -25,6 +34,11 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.user.first_name} {self.user.last_name}"
+
+    def regenerate_telegram_link_token(self):
+        self.telegram_link_token = secrets.token_urlsafe(12)
+        self.save(update_fields=['telegram_link_token'])
+        return self.telegram_link_token
 
     class Meta:
         verbose_name_plural = "Пользователи"
@@ -54,6 +68,15 @@ class GoogleOAuthProfile(models.Model):
     
 class Brand(models.Model):
     name = models.CharField(max_length=255, unique=True)
+
+    def clean(self):
+        import re
+        if '.' in self.name:
+            raise ValidationError("Название бренда не должно содержать лишних символов.")
+        if not re.match(r'^[a-zA-Z\s]+$', self.name):
+            raise ValidationError("Название бренда должно быть только на латинице.")
+        if len(self.name) < 2:
+            raise ValidationError("Название бренда должно быть не менее двух символов.")
 
     class Meta:
         verbose_name_plural = "Автомобильные марки"
@@ -144,6 +167,7 @@ class Auto(TimeStamped):
     sell_status = models.ForeignKey(SellStatus, on_delete=models.PROTECT, null=True, blank=True)
     # on_delete=models.CASCADE удаляет автомобиль, если связанный пользователь удалён
     views = models.PositiveIntegerField(default=0)  # Новое поле для подсчёта просмотров
+    profile = models.ForeignKey('Profile', on_delete=models.CASCADE, null=True, blank=True)
     objects = AutoManager()
     history = HistoricalRecords()
 
@@ -159,6 +183,12 @@ class Auto(TimeStamped):
         """
         return reverse('auto_detail', kwargs={'pk': self.pk})
 
+    def is_premium(self):
+        return (
+            (self.brand.name.lower() in ["porsche", "lexus"]) and
+            self.mileage is not None and self.mileage < 100000 and
+            self.region.name.lower() == "москва"
+        )
 
 class Photo(models.Model):
     url = models.URLField(max_length=700)
@@ -196,4 +226,55 @@ class AutoPhoto(models.Model):
 
     def __str__(self):
         return f"{self.auto.brand.name} {self.auto.model} ({self.auto.year})"
+    
+class Favorite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    auto = models.ForeignKey('Auto', on_delete=models.CASCADE, related_name='favorite')
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        unique_together = ('user', 'auto')
+        verbose_name_plural = 'Избранные'
+    def __str__(self):
+        return f"{self.user.username} - {self.auto}"
+    
+class Review(models.Model):
+    RATING_CHOICES = (
+        (1, '1 - Ужасно'),
+        (2, '2 - Плохо'),
+        (3, '3 - Нормально'),
+        (4, '4 - Хорошо'),
+        (5, '5 - Отлично'),
+    )
+    auto = models.ForeignKey('Auto', on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    rating = models.IntegerField(choices=RATING_CHOICES)
+    text = models.TextField(max_length=5000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'Отзывы'
+        ordering = ['-created_at']
+        unique_together = ('user', 'auto')
+
+    def __str__(self):
+        return f'Review by {self.user.username} for {self.auto}'
+
+class Message(models.Model):
+    """
+    Модель для переписки между покупателем и продавцом по объявлению.
+    """
+    auto = models.ForeignKey('Auto', on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name_plural = 'Сообщения'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'Message from {self.sender.username} to {self.receiver.username} about {self.auto}'
     

@@ -12,15 +12,19 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import ListAPIView
 from django.http import HttpResponse
-from cars.models import Auto, AutoPhoto, Brand, BodyType, EngineType, Color, Region, SellStatus, Profile
+from cars.models import Auto, AutoPhoto, Brand, BodyType, EngineType, Color, Region, SellStatus, Profile, Review, Message
 from cars.serializers import AutoSerializer, BrandSerializer, ProfileSerializer
 from news.models import New
 #для форм
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.http import HttpResponseRedirect
 from .forms import ContactForm
-from .forms import AutoForm, AutoPhotoForm
+from .forms import AutoForm, AutoPhotoForm, ReviewForm
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from cars.models import Favorite
+from django.views.decorators.http import require_POST
 
 class AutoFilterAPIView(generics.ListAPIView):
     """
@@ -94,6 +98,17 @@ def index(request):
     except NewCategory.DoesNotExist:
         advice_news = []
 
+    # Рекомендованные автомобили
+    recommended_autos_list = Auto.objects.filter(
+        (Q(brand__name__icontains="BMW") | Q(brand__name__icontains="Mercedes-Benz")) &
+        ~Q(price__gte=5000000) &
+        Q(year__gte=2015)
+    )[:4]
+
+    favorite_ids = []
+    if request.user.is_authenticated:
+        favorite_ids = list(Auto.objects.filter(favorite__user=request.user).values_list('id', flat=True))
+
     return render(request, 'index.html', {
         'autos_with_photos': autos_with_photos,
         'autos_page': autos_page,
@@ -101,21 +116,65 @@ def index(request):
         'latest_news': latest_news,
         'popular_autos': popular_autos,
         'advice_news': advice_news,
+        'favorite_ids': favorite_ids,
+        'recommended_autos_list': recommended_autos_list,
     })
 
 def auto_detail(request, pk):
-
     auto = get_object_or_404(Auto, pk=pk)
+    reviews = auto.reviews.all()
+    review_form = ReviewForm()
 
-    # Увеличиваем счетчик просмотров
-    auto.views = auto.views + 1
+    if request.method == 'POST':
+        if not request.user.is_authenticated:
+            messages.error(request, "Вы должны быть авторизованы, чтобы оставить отзыв.")
+            # Redirect to login page, then back to the auto detail page
+            return redirect(f"{reverse('account_login')}?next={request.path}")
+
+        if not auto.sell_status or auto.sell_status.name != 'Продан':
+            messages.error(request, "Вы не можете оставить отзыв на автомобиль, который не продан.")
+            return redirect('auto_detail', pk=pk)
+
+        review_form = ReviewForm(request.POST)
+        if review_form.is_valid():
+            if Review.objects.filter(auto=auto, user=request.user).exists():
+                messages.error(request, "Вы уже оставляли отзыв на этот автомобиль.")
+            else:
+                review = review_form.save(commit=False)
+                review.auto = auto
+                review.user = request.user
+                review.save()
+                messages.success(request, "Ваш отзыв был успешно добавлен.")
+                return redirect('auto_detail', pk=pk)
+        else:
+            messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
+
+    auto.views += 1
     auto.save(update_fields=['views'])
 
     photos = auto.auto_photos.all()
 
+    favorite_ids = []
+    user_profile = None
+    if request.user.is_authenticated:
+        favorite_ids = list(Auto.objects.filter(favorite__user=request.user).values_list('id', flat=True))
+        try:
+            user_profile = Profile.objects.get(user=request.user)
+        except Profile.DoesNotExist:
+            user_profile = None
+
+    sell_statuses = SellStatus.objects.all()
+    status_updated = request.GET.get('status_updated') == '1'
+
     return render(request, 'auto_detail.html', {
         'auto': auto,
-        'photos': photos
+        'photos': photos,
+        'favorite_ids': favorite_ids,
+        'user_profile': user_profile,
+        'sell_statuses': sell_statuses,
+        'status_updated': status_updated,
+        'reviews': reviews,
+        'review_form': review_form,
     })
 
 def auto_create(request):
@@ -133,18 +192,45 @@ def auto_create(request):
         return HttpResponseNotAllowed(['POST'])
 
 def search_autos(request):
-    query = request.GET.get('q')  # получаем поисковый запрос из URL
-    results = []
+    query = request.GET.get('q')
+    brand_id = request.GET.get('brand')
+    region_id = request.GET.get('region')
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
+    year = request.GET.get('year')
+
+    results = Auto.objects.available()
 
     if query:
-        # выполняем поиск по модели, бренду и описанию автомобиля
-        results = Auto.objects.filter(
+        results = results.filter(
             Q(brand__name__icontains=query) |
             Q(model__icontains=query) |
             Q(description__icontains=query)
         )
+    
+    if brand_id:
+        results = results.filter(brand_id=brand_id)
+    
+    if region_id:
+        results = results.filter(region_id=region_id)
+        
+    if min_price:
+        results = results.filter(price__gte=min_price)
+        
+    if max_price:
+        results = results.filter(price__lte=max_price)
+        
+    if year:
+        results = results.filter(year__gte=year)
 
-    return render(request, 'search_results.html', {'results': results, 'query': query})
+    brands = Brand.objects.all()
+    regions = Region.objects.all()
+
+    return render(request, 'cars/search.html', {
+        'results': results,
+        'brands': brands,
+        'regions': regions,
+    })
 
 def auto_delete(request, pk):
     if request.method == "DELETE":
@@ -290,6 +376,37 @@ class AutoViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": f"Ошибка сервера: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+    @action(methods=['POST'], detail=True, url_path='update-status')
+    def update_sell_status(self, request, pk=None):
+        """
+        Обновление статуса продажи конкретного автомобиля.
+        Только владелец или админ может менять статус.
+        """
+        from django.shortcuts import redirect
+        try:
+            auto = self.get_object()
+            user = request.user
+            if not (user.is_authenticated and (user.is_staff or user.is_superuser or (auto.profile and auto.profile.user == user))):
+                return Response({"error": "Доступ запрещён. Только владелец или администратор может менять статус."}, status=status.HTTP_403_FORBIDDEN)
+
+            new_status_id = request.data.get('sell_status_id')
+            if not new_status_id:
+                return Response({"error": "Необходимо указать sell_status_id"}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                new_status = SellStatus.objects.get(id=new_status_id)
+            except SellStatus.DoesNotExist:
+                return Response({"error": "Указанный статус продажи не найден"}, status=status.HTTP_400_BAD_REQUEST)
+            auto.sell_status = new_status
+            auto.save()
+            # Если админ — редирект на detail с флагом
+            if user.is_staff or user.is_superuser:
+                from django.urls import reverse
+                return redirect(f'{reverse("auto_detail", kwargs={"pk": auto.pk})}?status_updated=1')
+            serializer = self.get_serializer(auto)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": f"Ошибка сервера: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 # поиск по содержанию
 class AutoSearchAPIView(ListAPIView):
     queryset = Auto.objects.all()
@@ -428,12 +545,40 @@ def test_view(request):
     return render(request, 'test_template.html', {'autos_with_photos': autos})
 
 def auto_list(request):
-    autos = Auto.objects.all() 
-    return render(request, 'cars/autos_list.html', {'autos': autos})
+    autos = Auto.objects.all()
+    user_profile = None
+    if request.user.is_authenticated:
+        try:
+            from cars.models import Profile
+            user_profile = Profile.objects.get(user=request.user)
+        except Profile.DoesNotExist:
+            user_profile = None
+    return render(request, 'cars/autos_list.html', {'autos': autos, 'user_profile': user_profile})
 
+@login_required
+def favorite_autos(request):
+    user = request.user
+    favorites = Auto.objects.filter(favorite__user=user)
+    favorite_ids = list(favorites.values_list('id', flat=True))
+    return render(request, 'cars/favorite_autos.html', {'favorites': favorites, 'favorite_ids': favorite_ids})
+
+# Фильтрация по региону
+
+def autos_by_region(request, region_id):
+    autos = Auto.objects.available().filter(region_id=region_id)
+    region = Region.objects.get(id=region_id)
+    favorite_ids = []
+    if request.user.is_authenticated:
+        favorite_ids = list(Auto.objects.filter(favorite__user=request.user).values_list('id', flat=True))
+    return render(request, 'cars/autos_by_region.html', {'autos': autos, 'region': region, 'favorite_ids': favorite_ids})
+
+# Ограничение редактирования объявлений только владельцем
+@login_required
 def edit_auto(request, pk):
     auto = get_object_or_404(Auto, pk=pk)
-
+    if auto.profile.user != request.user:
+        messages.error(request, 'Вы не можете редактировать это объявление.')
+        return redirect('auto_detail', pk=pk)
     if request.method == 'POST':
         form = AutoForm(request.POST, instance=auto)
         if form.is_valid():
@@ -441,32 +586,49 @@ def edit_auto(request, pk):
             return redirect('auto_list')
     else:
         form = AutoForm(instance=auto)
-
     return render(request, 'cars/edit_auto.html', {'form': form, 'auto': auto})
 
+@login_required
 def delete_auto(request, pk):
-    # получаем объект автомобиля по pk
     auto = get_object_or_404(Auto, pk=pk)
-    auto.delete()  # удаляем объект из базы данных
+    if auto.profile.user != request.user:
+        messages.error(request, 'Вы не можете удалить это объявление.')
+        return redirect('auto_detail', pk=pk)
+    auto.delete()
     return redirect('auto_list')
 
 
 # cars/views.py
+@login_required
 def add_auto(request):
     if request.method == 'POST':
         auto_form = AutoForm(request.POST, request.FILES)
         photo_form = AutoPhotoForm(request.POST, request.FILES)
 
-        if auto_form.is_valid() and photo_form.is_valid():
-            # Сохраняем автомобиль без привязки к профилю
-            auto = auto_form.save()
+        if auto_form.is_valid():
+            auto = auto_form.save(commit=False)
+            try:
+                profile = Profile.objects.get(user=request.user)
+            except Profile.DoesNotExist:
+                messages.error(request, 'У вашего пользователя нет профиля.')
+                return redirect('add_auto')
+            auto.profile = profile
+            auto.save()
 
-            # Сохраняем фотографию
-            photo = photo_form.save(commit=False)
-            photo.auto = auto
-            photo.save()
+            # Сохраняем фотографию, только если она заполнена
+            if photo_form.is_valid() and photo_form.cleaned_data.get('url'):
+                photo = photo_form.save()
+                AutoPhoto.objects.create(auto=auto, photo=photo)
 
             return redirect('auto_list')
+        else:
+            # Показываем ошибки валидации
+            for field, errors in auto_form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{auto_form.fields[field].label}: {error}")
+            for field, errors in photo_form.errors.items():
+                for error in errors:
+                    messages.error(request, f"Фото: {error}")
     else:
         auto_form = AutoForm()
         photo_form = AutoPhotoForm()
@@ -475,3 +637,183 @@ def add_auto(request):
         'auto_form': auto_form,
         'photo_form': photo_form
     })
+
+@require_POST
+@login_required
+def toggle_favorite(request, pk):
+    auto = get_object_or_404(Auto, pk=pk)
+    favorite, created = Favorite.objects.get_or_create(user=request.user, auto=auto)
+    if not created:
+        favorite.delete()
+        messages.info(request, 'Автомобиль удалён из избранного.')
+    else:
+        messages.success(request, 'Автомобиль добавлен в избранное!')
+    return redirect(request.META.get('HTTP_REFERER', 'index'))
+
+@login_required
+def my_autos(request):
+    user_profile = get_object_or_404(Profile, user=request.user)
+    autos = Auto.objects.filter(profile=user_profile)
+    return render(request, 'cars/my_autos.html', {'autos': autos})
+
+def reviews_list(request):
+    """
+    Отображает список всех отзывов.
+    """
+    reviews = Review.objects.select_related('auto', 'user', 'auto__brand').prefetch_related('auto__auto_photos__photo').order_by('-created_at')
+    return render(request, 'reviews.html', {'reviews': reviews})
+
+@login_required
+def conversations_list(request):
+    """
+    Отображает список всех переписок пользователя.
+    """
+    # Получаем все объявления, по которым есть переписка с текущим пользователем
+    autos_with_messages = Auto.objects.filter(
+        messages__sender=request.user
+    ).distinct() | Auto.objects.filter(
+        messages__receiver=request.user
+    ).distinct()
+    
+    # Для каждого объявления получаем последнее сообщение
+    conversations = []
+    for auto in autos_with_messages:
+        last_message = Message.objects.filter(
+            auto=auto
+        ).filter(
+            Q(sender=request.user) | Q(receiver=request.user)
+        ).order_by('-created_at').first()
+        
+        if last_message:
+            # Определяем собеседника
+            if last_message.sender == request.user:
+                other_user = last_message.receiver
+            else:
+                other_user = last_message.sender
+            
+            conversations.append({
+                'auto': auto,
+                'last_message': last_message,
+                'other_user': other_user,
+                'unread_count': Message.objects.filter(
+                    auto=auto,
+                    receiver=request.user,
+                    is_read=False
+                ).count()
+            })
+    
+    # Сортируем по дате последнего сообщения
+    conversations.sort(key=lambda x: x['last_message'].created_at, reverse=True)
+    
+    return render(request, 'cars/conversations_list.html', {'conversations': conversations})
+
+@login_required
+def conversation_detail(request, auto_id):
+    """
+    Отображает переписку по конкретному объявлению.
+    """
+    auto = get_object_or_404(Auto, pk=auto_id)
+    
+    # Проверяем, что у объявления есть продавец
+    if not auto.profile or not auto.profile.user:
+        messages.error(request, 'У этого объявления нет продавца.')
+        return redirect('auto_detail', pk=auto_id)
+    
+    # Проверяем доступ: пользователь должен быть либо продавцом, либо покупателем
+    is_seller = auto.profile.user == request.user
+    is_buyer = Message.objects.filter(
+        auto=auto
+    ).filter(
+        Q(sender=request.user) | Q(receiver=request.user)
+    ).exists()
+    
+    # Если пользователь не продавец и не участвовал в переписке, разрешаем доступ (первое сообщение)
+    if not is_seller and not is_buyer:
+        # Покупатель может начать переписку
+        pass
+    
+    # Получаем все сообщения по этому объявлению
+    if is_seller:
+        # Продавец видит все сообщения по объявлению
+        messages_list = Message.objects.filter(auto=auto).order_by('created_at')
+    else:
+        # Покупатель видит только свои сообщения с продавцом
+        messages_list = Message.objects.filter(
+            auto=auto
+        ).filter(
+            Q(sender=request.user) | Q(receiver=request.user)
+        ).order_by('created_at')
+    
+    # Определяем собеседника
+    if is_seller:
+        # Если текущий пользователь - продавец, определяем собеседника из последнего сообщения
+        last_message = messages_list.exclude(sender=request.user).last()
+        if last_message:
+            other_user = last_message.sender
+        else:
+            # Если сообщений от покупателей нет, берем первого покупателя из переписки
+            first_buyer_msg = messages_list.exclude(sender=request.user).first()
+            if first_buyer_msg:
+                other_user = first_buyer_msg.sender
+            else:
+                other_user = None
+    else:
+        # Если текущий пользователь - покупатель, собеседник - продавец
+        other_user = auto.profile.user
+    
+    # Помечаем сообщения как прочитанные
+    Message.objects.filter(
+        auto=auto,
+        receiver=request.user,
+        is_read=False
+    ).update(is_read=True)
+    
+    # Обработка отправки нового сообщения
+    if request.method == 'POST':
+        message_text = request.POST.get('message')
+        if message_text:
+            if other_user:
+                Message.objects.create(
+                    auto=auto,
+                    sender=request.user,
+                    receiver=other_user,
+                    message=message_text
+                )
+                messages.success(request, 'Сообщение отправлено.')
+                return redirect('conversation_detail', auto_id=auto_id)
+            else:
+                messages.error(request, 'Не удалось определить получателя.')
+    
+    return render(request, 'cars/conversation_detail.html', {
+        'auto': auto,
+        'messages_list': messages_list,
+        'other_user': other_user,
+    })
+
+@login_required
+def send_message(request, auto_id):
+    """
+    Отправка сообщения продавцу по объявлению.
+    """
+    auto = get_object_or_404(Auto, pk=auto_id)
+    
+    # Проверяем, что пользователь не является владельцем объявления
+    if auto.profile and auto.profile.user == request.user:
+        messages.error(request, 'Вы не можете написать самому себе.')
+        return redirect('auto_detail', pk=auto_id)
+    
+    if request.method == 'POST':
+        message_text = request.POST.get('message')
+        if message_text and auto.profile:
+            Message.objects.create(
+                auto=auto,
+                sender=request.user,
+                receiver=auto.profile.user,
+                message=message_text
+            )
+            messages.success(request, 'Сообщение отправлено продавцу.')
+            return redirect('conversation_detail', auto_id=auto_id)
+        else:
+            messages.error(request, 'Ошибка при отправке сообщения.')
+    
+    return redirect('auto_detail', pk=auto_id)

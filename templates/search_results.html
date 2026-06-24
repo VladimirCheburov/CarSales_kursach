@@ -16,10 +16,15 @@
         <ul>
             {% for auto in results %}
                 <li>
-                    <a href="{{ auto.get_absolute_url }}">{{ auto.brand.name }} {{ auto.model }}</a>
-                        <p>Год выпуска: {{ auto.year }}</p>
-                        <p>Цена: {{ auto.price|floatformat:0 }} ₽</p>
-                    </a>
+                    <div class="card">
+                        {% if auto.is_premium %}
+                        <div class="premium-badge">Премиум</div>
+                        {% endif %}
+                        <a href="{{ auto.get_absolute_url }}">{{ auto.brand.name }} {{ auto.model }}</a>
+                            <p>Год выпуска: {{ auto.year }}</p>
+                            <p>Цена: {{ auto.price|floatformat:0 }} ₽</p>
+                        </a>
+                    </div>
                 </li>
             {% endfor %}
         </ul>

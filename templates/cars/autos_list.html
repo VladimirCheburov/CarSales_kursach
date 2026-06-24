@@ -9,35 +9,54 @@
 
     <div class="autos-grid">
         {% for auto in autos %}
-        <div class="auto-card">
-
-            <div class="auto-header">
-                <h3 class="auto-title">{{ auto.brand.name }} {{ auto.model }}</h3>
-                <span class="auto-year">{{ auto.year }}</span>
-            </div>
-
-            <div class="auto-body">
-                <div class="price-block">
-                    <span class="price">{{ auto.price|floatformat:0 }} ₽</span>
+        <div class="auto-card" style="display:flex;flex-direction:column;position:relative;">
+            <a href="{{ auto.get_absolute_url }}" style="text-decoration: none; color: inherit;display:block;flex:1;">
+                <div class="auto-photo">
+                    <div style="position:relative;">
+                        {% if auto.auto_photos.first %}
+                            <img src="{{ auto.auto_photos.first.photo.url }}" alt="Фото {{ auto.brand.name }}" class="auto-img">
+                        {% else %}
+                            <div class="no-photo"><i class="fas fa-car fa-3x"></i></div>
+                        {% endif %}
+                        {% if auto.is_premium %}
+                        <div class="premium-overlay">
+                            <span class="premium-icon">🔥</span>
+                            <span class="premium-text"><b>ПРЕМИУМ</b></span>
+                            <span class="premium-icon">🔥</span>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
-                <div class="location">
-                    <i class="fas fa-map-marker-alt"></i>
-                    {{ auto.region.name }}
+                <div class="auto-header">
+                    <h3 class="auto-title">{{ auto.brand.name }} {{ auto.model }}</h3>
+                    <span class="auto-year">{{ auto.year }}</span>
                 </div>
-            </div>
-
+                <div class="auto-body">
+                    <div class="price-block">
+                        <span class="price">{{ auto.price|floatformat:0 }} ₽</span>
+                    </div>
+                    <div class="location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        {{ auto.region.name }}
+                    </div>
+                </div>
+            </a>
+            {% if user.is_authenticated %}
+            <form method="post" action="{% url 'toggle_favorite' auto.pk %}" style="margin: 0.5rem 1.5rem 1rem 1.5rem;">
+                {% csrf_token %}
+                {% if auto.id in favorite_ids %}
+                    <button class="fav-btn" type="submit">Удалить из избранного</button>
+                {% else %}
+                    <button class="fav-btn" type="submit">★ В избранное</button>
+                {% endif %}
+            </form>
+            {% endif %}
+            {% if user.is_authenticated and auto.profile and user_profile and auto.profile.id == user_profile.id %}
             <div class="auto-actions">
-                <a href="{% url 'edit_auto' auto.id %}" class="btn edit-btn">
-                    <i class="fas fa-edit"></i> Изменить
-                </a>
-                <form method="POST" action="{% url 'delete_auto' auto.id %}" class="delete-form">
-                    {% csrf_token %}
-                    <button type="submit" class="btn delete-btn"
-                            onclick="return confirm('Удалить автомобиль?')">
-                        <i class="fas fa-trash"></i> Удалить
-                    </button>
-                </form>
+                <a href="{% url 'edit_auto' auto.pk %}" class="btn edit-btn">Редактировать</a>
+                <a href="{% url 'delete_auto' auto.pk %}" class="btn delete-btn">Удалить</a>
             </div>
+            {% endif %}
         </div>
         {% empty %}
         <div class="empty-list">
@@ -80,16 +99,31 @@
         flex-direction: column;
     }
 
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+        flex-grow: 1;
+    }
+
     .auto-photo {
-        height: 220px;
+        height: 180px;
         background: #f8f9fa;
         position: relative;
     }
 
-    .auto-img {
+    .auto-img, .card-img {
         width: 100%;
-        height: 100%;
+        height: 180px;
         object-fit: cover;
+        border-radius: 12px 12px 0 0;
     }
 
     .no-photo {
@@ -122,7 +156,7 @@
     }
 
     .price {
-        color: #27ae60;
+        color: #2563eb;
         font-size: 1.4rem;
         font-weight: 700;
     }
@@ -177,6 +211,35 @@
         padding: 4rem 0;
         color: #7f8c8d;
     }
+
+    .premium-overlay {
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.55);
+        color: #ffd700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        font-weight: bold;
+        gap: 0.5em;
+        padding: 0.3em 0;
+        border-radius: 0 0 12px 12px;
+        z-index: 2;
+    }
+
+    .premium-overlay .premium-icon {
+        font-size: 1.3em;
+    }
+
+    .premium-overlay .premium-text {
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #fff;
+    }
+
+    .card-img { width: 100%; height: 180px; object-fit: cover; border-radius: 12px 12px 0 0; }
 
     @media (max-width: 768px) {
         .autos-grid {

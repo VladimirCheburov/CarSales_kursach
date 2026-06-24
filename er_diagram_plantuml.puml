@@ -1,0 +1,144 @@
+@startuml CarSales ER Diagram
+
+!define table(x) class x << (T,#FFAAAA) >>
+!define primary_key(x) <u>x</u>
+!define foreign_key(x) <i>x</i>
+
+' Пользователи
+table(User) {
+  primary_key(id) : int
+  username : string
+  email : string
+  first_name : string
+  last_name : string
+  is_staff : boolean
+  is_active : boolean
+  date_joined : datetime
+}
+
+table(Profile) {
+  primary_key(id) : int
+  foreign_key(user_id) : int
+  phone_num : string
+}
+
+table(GoogleOAuthProfile) {
+  primary_key(id) : int
+  foreign_key(user_id) : int
+  google_user_id : string
+  access_token : text
+  refresh_token : text
+  token_expiry : datetime
+  created_at : datetime
+  updated_at : datetime
+}
+
+' Справочники
+table(Brand) {
+  primary_key(id) : int
+  name : string
+}
+
+table(BodyType) {
+  primary_key(id) : int
+  name : string
+}
+
+table(EngineType) {
+  primary_key(id) : int
+  name : string
+}
+
+table(Color) {
+  primary_key(id) : int
+  name : string
+}
+
+table(SellStatus) {
+  primary_key(id) : int
+  name : string
+}
+
+table(Region) {
+  primary_key(id) : int
+  name : string
+}
+
+' Основные сущности
+table(Auto) {
+  primary_key(id) : int
+  foreign_key(brand_id) : int
+  description : text
+  model : string
+  year : int
+  mileage : int
+  price : decimal
+  foreign_key(body_type_id) : int
+  foreign_key(engine_type_id) : int
+  foreign_key(color_id) : int
+  foreign_key(region_id) : int
+  foreign_key(sell_status_id) : int
+  views : int
+  foreign_key(profile_id) : int
+  created_at : datetime
+  updated_at : datetime
+}
+
+table(Photo) {
+  primary_key(id) : int
+  url : string
+  description : text
+}
+
+table(AutoPhoto) {
+  primary_key(id) : int
+  foreign_key(auto_id) : int
+  foreign_key(photo_id) : int
+}
+
+table(Favorite) {
+  primary_key(id) : int
+  foreign_key(user_id) : int
+  foreign_key(auto_id) : int
+  created_at : datetime
+}
+
+table(Review) {
+  primary_key(id) : int
+  foreign_key(auto_id) : int
+  foreign_key(user_id) : int
+  rating : int
+  text : text
+  created_at : datetime
+  updated_at : datetime
+}
+
+table(ContactMessage) {
+  primary_key(id) : int
+  name : string
+  email : string
+  message : text
+  attachment : string
+  created_at : datetime
+}
+
+' Связи
+User ||--|| Profile : "has"
+Profile ||--o{ GoogleOAuthProfile : "has"
+User ||--o{ Auto : "creates"
+User ||--o{ Favorite : "adds"
+User ||--o{ Review : "writes"
+User ||--o{ ContactMessage : "sends"
+
+Brand ||--o{ Auto : "has"
+BodyType ||--o{ Auto : "has"
+EngineType ||--o{ Auto : "has"
+Color ||--o{ Auto : "has"
+Region ||--o{ Auto : "located_in"
+SellStatus ||--o{ Auto : "has"
+
+Auto ||--o{ AutoPhoto : "has"
+Photo ||--o{ AutoPhoto : "belongs_to"
+Auto ||--o{ Review : "receives"
+
+@enduml 

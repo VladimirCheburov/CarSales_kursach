@@ -1,5 +1,5 @@
 from django import forms
-from .models import ContactMessage
+from .models import ContactMessage, Review
 import re
 from datetime import datetime
 from cars.models import Auto, AutoPhoto, Photo
@@ -99,7 +99,32 @@ class AutoForm(forms.ModelForm):
             'sell_status': 'Статус продажи',
         }
 
+    def clean_year(self):
+        year = self.cleaned_data.get('year')
+        if year and year > datetime.now().year:
+            raise forms.ValidationError("Год выпуска автомобиля не может быть в будущем.")
+        return year
+
+    def clean_price(self):
+        price = self.cleaned_data.get('price')
+        if price and price <= 0:
+            raise forms.ValidationError("Цена автомобиля должна быть больше нуля.")
+        return price
+
 class AutoPhotoForm(forms.ModelForm):
     class Meta:
         model = Photo
         fields = ['url', 'description']
+
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ['rating', 'text']
+        widgets = {
+            'text': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Ваш отзыв', 'class': 'form-control'}),
+            'rating': forms.Select(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'rating': 'Оценка',
+            'text': 'Текст отзыва',
+        }
